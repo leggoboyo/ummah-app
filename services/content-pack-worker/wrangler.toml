@@ -1,0 +1,17 @@
+name = "ummah-content-pack-worker"
+main = "src/index.mjs"
+compatibility_date = "2025-12-01"
+workers_dev = true
+preview_urls = false
+
+[vars]
+PACKS_DEFAULT_ENVIRONMENT = "staging"
+STARTER_CLAIMS_DAILY_BUDGET = "400"
+
+[[r2_buckets]]
+binding = "PACKS_BUCKET"
+bucket_name = "ummah-content-packs"
+
+[[kv_namespaces]]
+binding = "STARTER_CLAIMS"
+id = "bdf137092a074bfda676c79aca5368f3"

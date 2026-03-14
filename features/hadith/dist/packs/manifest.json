@@ -1,0 +1,63 @@
+{
+  "provider_key": "hadeethenc",
+  "generated_at": "2026-03-14T04:16:03Z",
+  "packs": [
+    {
+      "provider_key": "hadeethenc",
+      "pack_id": "hadith_pack:en",
+      "module": "hadithPack",
+      "language_code": "en",
+      "language_name": "English",
+      "version": "1.24.0",
+      "source_url": "https://hadeethenc.com/en/home",
+      "download_url": "",
+      "object_key": "hadith/en/v1.24.0/pack.json.gz",
+      "file_hash": "88911757b500d8d179b250bd3252b58676f0636b14e02db8ad874221ed89b67f",
+      "record_count": 2328,
+      "pack_size_bytes": 3164541,
+      "last_updated_at": "2025-11-29T10:11:26",
+      "is_starter_free_eligible": true,
+      "manifest_url": "",
+      "required_entitlement_key": "hadith_plus",
+      "is_bundled": false
+    },
+    {
+      "provider_key": "hadeethenc",
+      "pack_id": "hadith_pack:ar",
+      "module": "hadithPack",
+      "language_code": "ar",
+      "language_name": "Arabic",
+      "version": "1.7.0",
+      "source_url": "https://hadeethenc.com/ar/home",
+      "download_url": "",
+      "object_key": "hadith/ar/v1.7.0/pack.json.gz",
+      "file_hash": "5004a067f1f4b288034b4fef437eeef61d32459b447a395d2ad309a25bd1bb36",
+      "record_count": 3582,
+      "pack_size_bytes": 3025482,
+      "last_updated_at": "2025-11-12T00:00:55",
+      "is_starter_free_eligible": true,
+      "manifest_url": "",
+      "required_entitlement_key": "hadith_plus",
+      "is_bundled": false
+    },
+    {
+      "provider_key": "hadeethenc",
+      "pack_id": "hadith_pack:ur",
+      "module": "hadithPack",
+      "language_code": "ur",
+      "language_name": "Urdu",
+      "version": "1.33.0",
+      "source_url": "https://hadeethenc.com/ur/home",
+      "download_url": "",
+      "object_key": "hadith/ur/v1.33.0/pack.json.gz",
+      "file_hash": "a1cceb5a5738cc86c440743099bb7ad98de347c051ff577320fae7cdda20ff69",
+      "record_count": 2176,
+      "pack_size_bytes": 3076209,
+      "last_updated_at": "2026-02-11T11:32:31",
+      "is_starter_free_eligible": true,
+      "manifest_url": "",
+      "required_entitlement_key": "hadith_plus",
+      "is_bundled": false
+    }
+  ]
+}

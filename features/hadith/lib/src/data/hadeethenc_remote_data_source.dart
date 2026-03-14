@@ -110,7 +110,8 @@ class HadeethEncApiDataSource implements HadeethEncRemoteDataSource {
         payload['data'] as List<dynamic>? ?? <dynamic>[];
 
     return HadithListPage(
-      items: rawItems.cast<Map<String, dynamic>>().map((Map<String, dynamic> row) {
+      items:
+          rawItems.cast<Map<String, dynamic>>().map((Map<String, dynamic> row) {
         return HadithListItem(
           id: int.parse(row['id'] as String),
           title: row['title'] as String? ?? '',

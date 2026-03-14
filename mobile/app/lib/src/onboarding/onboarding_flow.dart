@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:prayer/prayer.dart';
@@ -8,6 +11,7 @@ import '../app/app_strings.dart';
 import '../bootstrap/app_controller.dart';
 import '../bootstrap/app_profile.dart';
 import '../bootstrap/manual_location_preset.dart';
+import '../content_packs/content_pack_registry.dart';
 import 'world_time_zone_picker.dart';
 
 enum _LocationSelectionMode {
@@ -37,7 +41,28 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   _LocationSelectionMode _locationSelectionMode = _LocationSelectionMode.city;
   String _manualLocationId = kManualLocationPresets.first.id;
   bool _preciseAndroidAlarms = false;
-  QuranStartupMode _quranStartupMode = QuranStartupMode.fullTranslation;
+  late ContentPackRegistry _contentPackRegistry;
+  StartupSetupPreset _setupPreset = StartupSetupPreset.recommendedStudy;
+  StartupSelection _startupSelection = const StartupSelection(
+    preset: StartupSetupPreset.recommendedStudy,
+    selectedPackIds: <String>[
+      AppContentPackIds.corePrayer,
+      AppContentPackIds.quranArabic,
+      AppContentPackIds.quranTranslationDefault,
+      AppContentPackIds.hadithPackDefault,
+    ],
+    deferredPackIds: <String>[],
+    wifiOnlyDownloads: true,
+    storageSaverMode: false,
+  );
+  List<ContentPackManifest> _startupPacks = const <ContentPackManifest>[];
+  StorageEstimate _storageEstimate = const StorageEstimate(
+    immediateDownloadBytes: 0,
+    deferredDownloadBytes: 0,
+    selectedPackCount: 0,
+    deferredPackCount: 0,
+  );
+  bool _packsReady = false;
 
   static bool _timeZonesReady = false;
 
@@ -55,7 +80,16 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         : _LocationSelectionMode.city;
     _manualLocationId = profile.manualLocationId;
     _preciseAndroidAlarms = profile.preciseAndroidAlarms;
-    _quranStartupMode = profile.quranStartupMode;
+    _contentPackRegistry = ContentPackRegistry();
+    _startupSelection = profile.startupSelection;
+    _setupPreset = profile.startupSelection.preset;
+    Future<void>.microtask(_loadStartupPlanner);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_contentPackRegistry.dispose());
+    super.dispose();
   }
 
   String _initialLanguageCode(AppProfile profile) {
@@ -73,6 +107,127 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       return deviceLanguage;
     }
     return 'en';
+  }
+
+  void _applySetupPreset(StartupSetupPreset preset) {
+    final StartupSelection presetSelection =
+        _contentPackRegistry.selectionForPreset(preset);
+    setState(() {
+      _setupPreset = preset;
+      _startupSelection = presetSelection;
+    });
+    unawaited(_refreshStorageEstimate());
+  }
+
+  void _toggleCustomPack(ContentPackManifest manifest, bool selected) {
+    final Set<String> selectedPackIds = _startupSelection.selectedPackIds.toSet();
+    final Set<String> deferredPackIds = _startupSelection.deferredPackIds.toSet();
+
+    if (manifest.isBundled) {
+      selectedPackIds.add(manifest.id);
+    } else if (selected) {
+      final bool unlocked = manifest.isFree ||
+          (manifest.requiredEntitlement != null &&
+              widget.controller.hasAccess(manifest.requiredEntitlement!));
+      final bool selectableNow =
+          manifest.availabilityStatus == ContentAvailabilityStatus.available &&
+              unlocked;
+      if (selectableNow) {
+        selectedPackIds.add(manifest.id);
+        deferredPackIds.remove(manifest.id);
+      } else {
+        deferredPackIds.add(manifest.id);
+        selectedPackIds.remove(manifest.id);
+      }
+    } else {
+      selectedPackIds.remove(manifest.id);
+      deferredPackIds.remove(manifest.id);
+    }
+
+    setState(() {
+      _startupSelection = _startupSelection.copyWith(
+        preset: StartupSetupPreset.custom,
+        selectedPackIds: selectedPackIds.toList()..sort(),
+        deferredPackIds: deferredPackIds.toList()..sort(),
+      );
+      _setupPreset = StartupSetupPreset.custom;
+    });
+    unawaited(_refreshStorageEstimate());
+  }
+
+  bool _isPackChosen(ContentPackManifest manifest) {
+    return _startupSelection.selectedPackIds.contains(manifest.id) ||
+        _startupSelection.deferredPackIds.contains(manifest.id) ||
+        manifest.isBundled;
+  }
+
+  bool _isPackDeferred(ContentPackManifest manifest) {
+    return _startupSelection.deferredPackIds.contains(manifest.id);
+  }
+
+  String _packStatusLabel(ContentPackManifest manifest) {
+    if (manifest.isBundled) {
+      return 'Included';
+    }
+    if (_isPackDeferred(manifest)) {
+      if (manifest.availabilityStatus == ContentAvailabilityStatus.comingSoon) {
+        return 'Coming soon';
+      }
+      return 'Saved for later';
+    }
+    if (_startupSelection.selectedPackIds.contains(manifest.id)) {
+      return manifest.isFree ? 'Free' : 'Unlocked';
+    }
+    if (manifest.requiredEntitlement != null) {
+      return 'Requires ${manifest.requiredEntitlement!.title}';
+    }
+    return manifest.isFree ? 'Free' : 'Optional';
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes >= 1000000) {
+      return '${(bytes / 1000000).toStringAsFixed(1)} MB';
+    }
+    if (bytes >= 1000) {
+      return '${(bytes / 1000).toStringAsFixed(0)} KB';
+    }
+    return '$bytes B';
+  }
+
+  Future<void> _loadStartupPlanner() async {
+    final List<ContentPackManifest> packs =
+        await _contentPackRegistry.getStartupPacks(
+      preferredLanguageCode: _languageCode,
+    );
+    final StorageEstimate estimate =
+        await _contentPackRegistry.estimateSelection(
+      selection: _startupSelection,
+      preferredLanguageCode: _languageCode,
+      entitlements: widget.controller.entitlements,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _startupPacks = packs;
+      _storageEstimate = estimate;
+      _packsReady = true;
+    });
+  }
+
+  Future<void> _refreshStorageEstimate() async {
+    final StorageEstimate estimate =
+        await _contentPackRegistry.estimateSelection(
+      selection: _startupSelection,
+      preferredLanguageCode: _languageCode,
+      entitlements: widget.controller.entitlements,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _storageEstimate = estimate;
+    });
   }
 
   @override
@@ -126,6 +281,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                         setState(() {
                           _languageCode = value;
                         });
+                        unawaited(_loadStartupPlanner());
                       },
                     ),
                     const SizedBox(height: 12),
@@ -377,20 +533,124 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 ),
               ),
               _SectionCard(
-                title: strings.quranSetupTitle,
+                title: 'Choose your setup',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    _InfoBlurb(
-                      title: 'Arabic + your phone language',
-                      message:
-                          'The full Quran Arabic text is bundled offline. The first time you open Quran, Ummah App will also download the full translation in your phone language when one is available. Other languages can be added later.',
+                    Text(
+                      'Pick the lightest install, a reading-friendly setup, or customize what downloads first. Paid items can be saved for later without blocking onboarding.',
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: <Widget>[
+                        _SetupPresetCard(
+                          title: 'Lightest install',
+                          subtitle: 'Prayer core + Quran Arabic only.',
+                          selected: _setupPreset == StartupSetupPreset.lightest,
+                          onTap: () => _applySetupPreset(
+                            StartupSetupPreset.lightest,
+                          ),
+                        ),
+                        _SetupPresetCard(
+                          title: 'Recommended study setup',
+                          subtitle:
+                              'Adds the phone-language Quran translation and one Sunni Hadith pack.',
+                          selected: _setupPreset ==
+                              StartupSetupPreset.recommendedStudy,
+                          onTap: () => _applySetupPreset(
+                            StartupSetupPreset.recommendedStudy,
+                          ),
+                        ),
+                        _SetupPresetCard(
+                          title: 'Custom',
+                          subtitle:
+                              'Choose your own downloads, storage mode, and paid wish list.',
+                          selected: _setupPreset == StartupSetupPreset.custom,
+                          onTap: () => _applySetupPreset(
+                            StartupSetupPreset.custom,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (!_packsReady)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: LinearProgressIndicator(),
+                      )
+                    else ...<Widget>[
+                      _InfoBlurb(
+                        title: 'Download estimate',
+                        message:
+                            'Now: ${_formatBytes(_storageEstimate.immediateDownloadBytes)} across ${_storageEstimate.selectedPackCount} optional downloads. Later: ${_formatBytes(_storageEstimate.deferredDownloadBytes)} across ${_storageEstimate.deferredPackCount} deferred items.',
+                      ),
+                      const SizedBox(height: 12),
+                      if (_setupPreset == StartupSetupPreset.custom)
+                        ..._startupPacks.map(
+                          (ContentPackManifest pack) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _PackPlannerTile(
+                              manifest: pack,
+                              selected: _isPackChosen(pack),
+                              deferred: _isPackDeferred(pack),
+                              statusLabel: _packStatusLabel(pack),
+                              onChanged: pack.isBundled
+                                  ? null
+                                  : (bool value) =>
+                                      _toggleCustomPack(pack, value),
+                            ),
+                          ),
+                        ),
+                      if (_setupPreset != StartupSetupPreset.custom)
+                        _PresetSummaryCard(
+                          selection: _startupSelection,
+                          manifests: _startupPacks,
+                          formatBytes: _formatBytes,
+                        ),
+                      const SizedBox(height: 8),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        value: _startupSelection.wifiOnlyDownloads,
+                        title: const Text('Wi‑Fi only for bigger downloads'),
+                        subtitle: const Text(
+                          'Recommended for older phones or limited data plans.',
+                        ),
+                        onChanged: (bool value) {
+                          setState(() {
+                            _setupPreset = StartupSetupPreset.custom;
+                            _startupSelection = _startupSelection.copyWith(
+                              preset: StartupSetupPreset.custom,
+                              wifiOnlyDownloads: value,
+                            );
+                          });
+                        },
+                      ),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        value: _startupSelection.storageSaverMode,
+                        title: const Text('Storage saver mode'),
+                        subtitle: const Text(
+                          'Prefer the lightest setup and defer non-essential downloads.',
+                        ),
+                        onChanged: (bool value) {
+                          setState(() {
+                            _setupPreset = StartupSetupPreset.custom;
+                            _startupSelection = _startupSelection.copyWith(
+                              preset: StartupSetupPreset.custom,
+                              storageSaverMode: value,
+                            );
+                          });
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
               _SectionCard(
-                title: 'What you get on day one',
+                title: 'Plans at a glance',
                 child: const _SetupComparisonPanel(),
               ),
               const SizedBox(height: 12),
@@ -413,7 +673,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                             selectedManualTimeZoneId: manualPreset.timeZoneId,
                             selectedManualCoordinates: manualPreset.coordinates,
                             preciseAndroidAlarms: _preciseAndroidAlarms,
-                            selectedQuranStartupMode: _quranStartupMode,
+                            selectedQuranStartupMode:
+                                _startupSelection.selectedPackIds.contains(
+                              AppContentPackIds.quranTranslationDefault,
+                            )
+                                    ? QuranStartupMode.fullTranslation
+                                    : QuranStartupMode.arabicOnly,
+                            startupSelection: _startupSelection,
                           );
                         },
                   child: Padding(
@@ -651,14 +917,16 @@ class _SetupComparisonPanel extends StatelessWidget {
         columns: const <DataColumn>[
           DataColumn(label: Text('Feature')),
           DataColumn(label: Text('Free core')),
-          DataColumn(label: Text('Study')),
-          DataColumn(label: Text('AI')),
+          DataColumn(label: Text('Study Plus')),
+          DataColumn(label: Text('Quran Plus')),
+          DataColumn(label: Text('AI Plus')),
           DataColumn(label: Text('Bundle')),
         ],
         rows: const <DataRow>[
           DataRow(
             cells: <DataCell>[
               DataCell(Text('Prayer times + adhan')),
+              DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
@@ -672,11 +940,13 @@ class _SetupComparisonPanel extends StatelessWidget {
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
+              DataCell(_ComparisonMark.included()),
             ],
           ),
           DataRow(
             cells: <DataCell>[
               DataCell(Text('Quran reader + phone-language translation')),
+              DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
@@ -690,14 +960,36 @@ class _SetupComparisonPanel extends StatelessWidget {
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
+              DataCell(_ComparisonMark.included()),
             ],
           ),
           DataRow(
             cells: <DataCell>[
               DataCell(Text('Hadith library')),
+              DataCell(_ComparisonMark.included()),
+              DataCell(_ComparisonMark.included()),
+              DataCell(_ComparisonMark.locked()),
+              DataCell(_ComparisonMark.locked()),
+              DataCell(_ComparisonMark.included()),
+            ],
+          ),
+          DataRow(
+            cells: <DataCell>[
+              DataCell(Text('Extra Hadith languages')),
               DataCell(_ComparisonMark.locked()),
               DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.locked()),
+              DataCell(_ComparisonMark.locked()),
+              DataCell(_ComparisonMark.included()),
+            ],
+          ),
+          DataRow(
+            cells: <DataCell>[
+              DataCell(Text('Quran audio + study packs')),
+              DataCell(_ComparisonMark.locked()),
+              DataCell(_ComparisonMark.locked()),
+              DataCell(_ComparisonMark.included()),
+              DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
             ],
           ),
@@ -705,14 +997,16 @@ class _SetupComparisonPanel extends StatelessWidget {
             cells: <DataCell>[
               DataCell(Text('Scholar feed')),
               DataCell(_ComparisonMark.locked()),
-              DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.locked()),
+              DataCell(_ComparisonMark.locked()),
+              DataCell(_ComparisonMark.included()),
               DataCell(_ComparisonMark.included()),
             ],
           ),
           DataRow(
             cells: <DataCell>[
               DataCell(Text('Ask Quran / Ask Hadith AI')),
+              DataCell(_ComparisonMark.locked()),
               DataCell(_ComparisonMark.locked()),
               DataCell(_ComparisonMark.locked()),
               DataCell(_ComparisonMark.included()),
@@ -732,7 +1026,7 @@ class _ComparisonMark extends StatelessWidget {
 
   const _ComparisonMark.locked()
       : included = false,
-        label = 'Optional';
+        label = 'Upgrade';
 
   final bool included;
   final String label;
@@ -751,6 +1045,170 @@ class _ComparisonMark extends StatelessWidget {
         const SizedBox(width: 6),
         Text(label),
       ],
+    );
+  }
+}
+
+class _SetupPresetCard extends StatelessWidget {
+  const _SetupPresetCard({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Ink(
+        width: 220,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: selected
+              ? colorScheme.primaryContainer.withValues(alpha: 0.8)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+          border: Border.all(
+            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PackPlannerTile extends StatelessWidget {
+  const _PackPlannerTile({
+    required this.manifest,
+    required this.selected,
+    required this.deferred,
+    required this.statusLabel,
+    this.onChanged,
+  });
+
+  final ContentPackManifest manifest;
+  final bool selected;
+  final bool deferred;
+  final String statusLabel;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final bool disabled = onChanged == null;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colorScheme.outlineVariant),
+        color: deferred
+            ? colorScheme.tertiaryContainer.withValues(alpha: 0.45)
+            : selected
+                ? colorScheme.secondaryContainer.withValues(alpha: 0.55)
+                : Colors.white,
+      ),
+      child: SwitchListTile.adaptive(
+        value: selected,
+        onChanged: disabled ? null : onChanged,
+        secondary: Icon(
+          manifest.isBundled
+              ? Icons.inventory_2_outlined
+              : manifest.module == ContentModule.quranAudio
+                  ? Icons.graphic_eq_outlined
+                  : manifest.module == ContentModule.hadithPack
+                      ? Icons.library_books_outlined
+                      : Icons.download_for_offline_outlined,
+        ),
+        title: Text(manifest.title),
+        subtitle: Text(
+          '${manifest.description}\n$statusLabel • ${manifest.isBundled ? 'Bundled' : '${(manifest.estimatedSizeBytes / 1000000).toStringAsFixed(1)} MB'}',
+        ),
+      ),
+    );
+  }
+}
+
+class _PresetSummaryCard extends StatelessWidget {
+  const _PresetSummaryCard({
+    required this.selection,
+    required this.manifests,
+    required this.formatBytes,
+  });
+
+  final StartupSelection selection;
+  final List<ContentPackManifest> manifests;
+  final String Function(int bytes) formatBytes;
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, ContentPackManifest> byId = <String, ContentPackManifest>{
+      for (final ContentPackManifest manifest in manifests) manifest.id: manifest,
+    };
+    final List<ContentPackManifest> selected = selection.selectedPackIds
+        .map((String id) => byId[id])
+        .whereType<ContentPackManifest>()
+        .toList(growable: false);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Selected for first setup',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            for (final ContentPackManifest manifest in selected)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '• ${manifest.title}${manifest.isBundled ? '' : ' • ${formatBytes(manifest.estimatedSizeBytes)}'}',
+                ),
+              ),
+            if (selection.deferredPackIds.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                'Saved for later',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 6),
+              for (final String id in selection.deferredPackIds)
+                if (byId[id] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text('• ${byId[id]!.title}'),
+                  ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

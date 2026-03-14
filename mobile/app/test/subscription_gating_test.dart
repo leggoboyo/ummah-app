@@ -5,12 +5,13 @@ import 'package:prayer/prayer.dart';
 import 'package:subscriptions/subscriptions.dart';
 import 'package:ummah_mobile_app/src/app/ummah_app.dart';
 import 'package:ummah_mobile_app/src/bootstrap/app_controller.dart';
+import 'package:ummah_mobile_app/src/bootstrap/app_identity_store.dart';
 import 'package:ummah_mobile_app/src/bootstrap/app_profile_store.dart';
 import 'package:ummah_mobile_app/src/bootstrap/device_location_service.dart';
 import 'package:ummah_mobile_app/src/bootstrap/local_notifications_service.dart';
 
 void main() {
-  testWidgets('locked Hadith module routes to plans, then opens after unlock', (
+  testWidgets('Hadith Finder opens for free users from the More tab', (
     WidgetTester tester,
   ) async {
     final AppController controller = AppController(
@@ -42,7 +43,7 @@ void main() {
             SubscriptionProduct(
               id: 'hadith_plus_addon',
               title: 'Hadith Plus',
-              tagline: 'Unlock the hadith library.',
+              tagline: 'Unlock extra Hadith language packs.',
               description: 'Test product for widget integration.',
               kind: SubscriptionProductKind.lifetimeAddOn,
               primaryEntitlement: AppEntitlement.hadithPlus,
@@ -54,6 +55,7 @@ void main() {
           ],
         ),
       ),
+      identityStore: _TestAppIdentityStore(),
     );
 
     await controller.initialize();
@@ -67,12 +69,14 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     await tester.tap(find.text('More'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
-    final Finder hadithLabel = find.text('Hadith Library');
+    final Finder hadithLabel = find.text('Hadith Finder');
     await tester.scrollUntilVisible(
       hadithLabel,
       250,
@@ -80,47 +84,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Free'), findsOneWidget);
     expect(
-      find.text(
-        'Locked module: unlock Hadith Plus or Mega Bundle to open the hadith library.',
-      ),
+      find.textContaining('Free Sunni Hadith Finder'),
       findsOneWidget,
     );
 
     await tester.tap(hadithLabel.last);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Plans & Unlocks'), findsOneWidget);
-    expect(find.text('Hadith Plus is locked'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.widgetWithText(FilledButton, 'Unlock'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Unlock'));
-    await tester.pumpAndSettle();
-
-    expect(controller.hasAccess(AppEntitlement.hadithPlus), isTrue);
-
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('Unlocked:'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      hadithLabel,
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(hadithLabel.last);
     await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('Hadith Library'), findsWidgets);
-    expect(find.text('Hadith categories refreshed from HadeethEnc.'),
-        findsNothing);
+    expect(find.text('Hadith Finder'), findsWidgets);
+    expect(find.text('Plans & Unlocks'), findsNothing);
   });
 }
 
@@ -139,4 +114,16 @@ class _InMemoryKeyValueStore implements KeyValueStore {
   Future<void> writeString(String key, String value) async {
     _storage[key] = value;
   }
+}
+
+class _TestAppIdentityStore implements AppIdentityStore {
+  String? _appUserId;
+
+  @override
+  Future<String> ensureRevenueCatAppUserId() async {
+    return _appUserId ??= 'ummah_test_subscription';
+  }
+
+  @override
+  Future<String?> readRevenueCatAppUserId() async => _appUserId;
 }

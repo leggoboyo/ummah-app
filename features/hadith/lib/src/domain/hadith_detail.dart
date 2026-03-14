@@ -18,6 +18,12 @@ class HadithDetail {
     required this.wordsMeaningsArabic,
     required this.attributionArabic,
     required this.gradeArabic,
+    this.titleArabic = '',
+    this.benefits = const <String>[],
+    this.benefitsArabic = const <String>[],
+    this.sourceReference = '',
+    this.sourceReferenceArabic = '',
+    this.sourceUrl = '',
     this.lastSyncedAt,
   });
 
@@ -39,5 +45,11 @@ class HadithDetail {
   final List<String> wordsMeaningsArabic;
   final String attributionArabic;
   final String gradeArabic;
+  final String titleArabic;
+  final List<String> benefits;
+  final List<String> benefitsArabic;
+  final String sourceReference;
+  final String sourceReferenceArabic;
+  final String sourceUrl;
   final DateTime? lastSyncedAt;
 }

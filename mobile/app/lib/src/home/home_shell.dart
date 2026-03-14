@@ -42,6 +42,7 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     _quranController = QuranController(
       startupMode: widget.controller.quranStartupMode,
+      startupSelection: widget.controller.startupSelection,
     );
     Future<void>.microtask(
       () => _quranController.initialize(
@@ -232,7 +233,8 @@ class _DashboardPage extends StatelessWidget {
                       highlighted: nextPrayer == prayer,
                       detailLabel:
                           nextPrayer == prayer && nextPrayerTime != null
-                              ? _formatCountdownExact(nextPrayerTime.difference(now))
+                              ? _formatCountdownExact(
+                                  nextPrayerTime.difference(now))
                               : null,
                     ),
                   ),
@@ -295,7 +297,8 @@ class _PrayerPage extends StatelessWidget {
                       highlighted: nextPrayer == prayer,
                       detailLabel:
                           nextPrayer == prayer && nextPrayerTime != null
-                              ? _formatCountdownExact(nextPrayerTime.difference(now))
+                              ? _formatCountdownExact(
+                                  nextPrayerTime.difference(now))
                               : null,
                     ),
                   ),
@@ -325,19 +328,22 @@ class _QiblaPage extends StatefulWidget {
 }
 
 class _QiblaPageState extends State<_QiblaPage> {
-  final DeviceHeadingService _headingService = const FlutterCompassHeadingService();
+  final DeviceHeadingService _headingService =
+      const FlutterCompassHeadingService();
   _QiblaViewMode _mode = _QiblaViewMode.compass;
 
   @override
   Widget build(BuildContext context) {
-    final double bearing = widget.controller.qiblaDirection.bearingFromTrueNorth;
+    final double bearing =
+        widget.controller.qiblaDirection.bearingFromTrueNorth;
 
     return StreamBuilder<DeviceHeading?>(
       stream: _headingService.headingStream(),
       builder: (BuildContext context, AsyncSnapshot<DeviceHeading?> snapshot) {
         final DeviceHeading? heading = snapshot.data;
         final bool canUseCompass = heading != null;
-        final bool showingCompass = canUseCompass && _mode == _QiblaViewMode.compass;
+        final bool showingCompass =
+            canUseCompass && _mode == _QiblaViewMode.compass;
         final double arrowRotationDegrees = showingCompass
             ? ((bearing - heading.degreesFromNorth) + 360.0) % 360.0
             : bearing;
@@ -372,7 +378,7 @@ class _QiblaPageState extends State<_QiblaPage> {
                             label: Text('Bearing'),
                           ),
                         ],
-                      selected: <_QiblaViewMode>{_mode},
+                        selected: <_QiblaViewMode>{_mode},
                         onSelectionChanged:
                             (Set<_QiblaViewMode> selectedModes) {
                           setState(() {
@@ -390,7 +396,8 @@ class _QiblaPageState extends State<_QiblaPage> {
                     const SizedBox(height: 18),
                     Text(
                       showingCompass
-                          ? _compassInstruction(bearing, heading.degreesFromNorth)
+                          ? _compassInstruction(
+                              bearing, heading.degreesFromNorth)
                           : canUseCompass
                               ? 'Switch to Compass when you want the arrow to react to phone movement.'
                               : 'Compass mode needs a phone with heading sensors. Bearing mode still works offline.',
@@ -425,23 +432,16 @@ class _MorePage extends StatelessWidget {
   final QuranController quranController;
   final AppController appController;
 
-  void _openHadithOrPaywall(BuildContext context) {
-    if (appController.hasAccess(AppEntitlement.hadithPlus)) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (BuildContext context) => HadithLibraryScreen(
-            preferredLanguageCode: appController.languageCode,
-          ),
-        ),
-      );
-      return;
-    }
-
+  void _openHadithFinder(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (BuildContext context) => PlansAndUnlocksScreen(
-          controller: appController,
-          focusEntitlement: AppEntitlement.hadithPlus,
+        builder: (BuildContext context) => HadithLibraryScreen(
+          preferredLanguageCode: appController.languageCode,
+          hasPremiumLanguageAccess:
+              appController.hasAccess(AppEntitlement.hadithPlus),
+          startupSelection: appController.startupSelection,
+          appUserId: appController.revenueCatAppUserId ?? '',
+          refreshPackAccess: appController.refreshEntitlements,
         ),
       ),
     );
@@ -600,18 +600,16 @@ class _MorePage extends StatelessWidget {
               },
             ),
             _ModuleCard(
-              icon: appController.hasAccess(AppEntitlement.hadithPlus)
-                  ? Icons.library_books_outlined
-                  : Icons.lock_outline,
-              title: 'Hadith Library',
+              icon: Icons.library_books_outlined,
+              title: 'Hadith Finder',
               subtitle: appController.hasAccess(AppEntitlement.hadithPlus)
-                  ? 'Unlocked: Sunni hadith cache and offline search, plus a respectful placeholder for the future licensed Shia pack.'
-                  : 'Locked module: unlock Hadith Plus or Mega Bundle to open the hadith library.',
+                  ? 'Free Sunni Hadith Finder with extra language packs unlocked.'
+                  : 'Free Sunni Hadith Finder with one recommended offline pack. Hadith Plus unlocks extra language packs and future advanced study tools.',
               statusLabel: appController.hasAccess(AppEntitlement.hadithPlus)
-                  ? 'Unlocked'
-                  : 'Locked',
-              highlighted: appController.hasAccess(AppEntitlement.hadithPlus),
-              onTap: () => _openHadithOrPaywall(context),
+                  ? 'Open + extras'
+                  : 'Free',
+              highlighted: true,
+              onTap: () => _openHadithFinder(context),
             ),
             _DetailPanelCard(
               icon: Icons.verified_user_outlined,
@@ -1028,7 +1026,8 @@ class _HeroSettingsFooter extends StatelessWidget {
       showDragHandle: true,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (BuildContext context, void Function(void Function()) setState) {
+          builder:
+              (BuildContext context, void Function(void Function()) setState) {
             return Padding(
               padding: EdgeInsets.fromLTRB(
                 16,
@@ -1106,7 +1105,8 @@ class _HeroSettingsFooter extends StatelessWidget {
                     onPressed: () async {
                       Navigator.of(context).pop();
                       if (selectedMode == AppLocationMode.device) {
-                        await controller.updateLocationMode(AppLocationMode.device);
+                        await controller
+                            .updateLocationMode(AppLocationMode.device);
                         await controller.refreshDeviceLocation();
                         return;
                       }
@@ -1385,7 +1385,8 @@ class _QiblaDial extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
-          for (final ({String label, Alignment alignment}) marker in <({String label, Alignment alignment})>[
+          for (final ({String label, Alignment alignment}) marker
+              in <({String label, Alignment alignment})>[
             (label: 'N', alignment: Alignment.topCenter),
             (label: 'E', alignment: Alignment.centerRight),
             (label: 'S', alignment: Alignment.bottomCenter),

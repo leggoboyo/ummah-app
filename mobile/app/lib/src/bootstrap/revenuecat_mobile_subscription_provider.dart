@@ -7,15 +7,19 @@ import 'package:purchases_flutter/purchases_flutter.dart' as rc;
 import 'package:subscriptions/subscriptions.dart';
 
 import 'app_environment.dart';
+import 'app_identity_store.dart';
 
 class RevenueCatMobileSubscriptionProvider implements SubscriptionProvider {
   RevenueCatMobileSubscriptionProvider({
     required AppEnvironment environment,
+    required AppIdentityStore identityStore,
     List<SubscriptionProduct>? catalog,
   })  : _environment = environment,
+        _identityStore = identityStore,
         _catalog = catalog ?? buildDefaultSubscriptionCatalog();
 
   final AppEnvironment _environment;
+  final AppIdentityStore _identityStore;
   final List<SubscriptionProduct> _catalog;
 
   bool _isConfigured = false;
@@ -147,8 +151,11 @@ class RevenueCatMobileSubscriptionProvider implements SubscriptionProvider {
       );
     }
 
+    final String appUserId = await _identityStore.ensureRevenueCatAppUserId();
     final rc.PurchasesConfiguration configuration =
-        rc.PurchasesConfiguration(apiKey)..diagnosticsEnabled = false;
+        rc.PurchasesConfiguration(apiKey)
+          ..appUserID = appUserId
+          ..diagnosticsEnabled = false;
     await rc.Purchases.configure(configuration);
     _isConfigured = true;
   }

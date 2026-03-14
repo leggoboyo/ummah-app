@@ -26,7 +26,9 @@ class _SourcesAndVersionsScreenState extends State<SourcesAndVersionsScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = SettingsController();
+    _controller = SettingsController(
+      preferredLanguageCode: widget.appController.languageCode,
+    );
     Future<void>.microtask(_controller.initialize);
   }
 
@@ -71,6 +73,11 @@ class _SourcesAndVersionsScreenState extends State<SourcesAndVersionsScreen> {
                       message:
                           'Source text is stored verbatim. Version labels come from the original provider or bundled asset metadata. If a provider does not expose a finer version number yet, the app records the best public version line available.',
                       color: Theme.of(context).colorScheme.secondaryContainer,
+                    ),
+                    const SizedBox(height: 12),
+                    _InstalledPacksCard(
+                      appController: widget.appController,
+                      installedPacks: _controller.installedContentPacks,
                     ),
                     const SizedBox(height: 12),
                     const _ProjectSourceDirectoryCard(),
@@ -301,10 +308,10 @@ class _ProjectSourceDirectoryCard extends StatelessWidget {
               'Quran Arabic: Tanzil Project (bundled, verbatim)',
             ),
             Text(
-              'Quran translations: QuranEnc API (cached locally, verbatim, version-tagged)',
+              'Quran translations: QuranEnc API (downloaded on demand, stored locally verbatim, version-tagged)',
             ),
             Text(
-              'Sunni hadith: HadeethEnc API (cached locally, verbatim)',
+              'Sunni hadith: HadeethEnc official language packs (installed for offline use, stored verbatim)',
             ),
             Text(
               'Shia hadith: not shipped yet until licensed content is secured',
@@ -315,6 +322,107 @@ class _ProjectSourceDirectoryCard extends StatelessWidget {
             Text(
               'Fiqh starter pack: curated internal starter pack with cited references and explicit non-fatwa disclaimer',
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InstalledPacksCard extends StatelessWidget {
+  const _InstalledPacksCard({
+    required this.appController,
+    required this.installedPacks,
+  });
+
+  final AppController appController;
+  final List<InstalledContentPack> installedPacks;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Installed content packs',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Setup preset: ${appController.startupSelection.preset.name}. Wi‑Fi only: ${appController.startupSelection.wifiOnlyDownloads ? 'on' : 'off'}. Storage saver: ${appController.startupSelection.storageSaverMode ? 'on' : 'off'}.',
+            ),
+            const SizedBox(height: 12),
+            if (installedPacks.isEmpty)
+              const Text('Only the bundled core is installed right now.')
+            else
+              for (final InstalledContentPack pack
+                  in installedPacks) ...<Widget>[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: <Widget>[
+                          Chip(label: Text(pack.module.name)),
+                          if (pack.languageCode != null)
+                            Chip(label: Text(pack.languageCode!.toUpperCase())),
+                          Chip(label: Text(pack.version)),
+                          Chip(label: Text(pack.installState.name)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        pack.title,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      if (pack.providerKey != null)
+                        Text('Provider: ${pack.providerKey}'),
+                      if (pack.installedAt != null) ...<Widget>[
+                        const SizedBox(height: 4),
+                        Text(
+                            'Installed: ${_formatDateTime(pack.installedAt!)}'),
+                      ],
+                      if (pack.lastUsedAt != null) ...<Widget>[
+                        const SizedBox(height: 4),
+                        Text('Last used: ${_formatDateTime(pack.lastUsedAt!)}'),
+                      ],
+                      const SizedBox(height: 4),
+                      Text(
+                        'Estimated device use: ${_formatBytes(pack.installedSizeBytes)}',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            if (appController
+                .startupSelection.deferredPackIds.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                'Deferred until later',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 6),
+              for (final String packId
+                  in appController.startupSelection.deferredPackIds)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text('• $packId'),
+                ),
+            ],
           ],
         ),
       ),
@@ -382,7 +490,8 @@ _ProviderMetadata _providerMetadataFor(String providerKey) {
         label: 'HadeethEnc',
         homepageUrl: 'https://hadeethenc.com/en/home',
         docsUrl: 'https://documenter.getpostman.com/view/5211979/TVev3j7q',
-        reuseNote: 'Hadith text is cached verbatim from the public source.',
+        reuseNote:
+            'Hadith text is stored verbatim from official HadeethEnc packs or public source data.',
       );
     case 'fiqh_pack':
       return const _ProviderMetadata(
@@ -406,4 +515,14 @@ String _formatDateTime(DateTime value) {
   final String hour = local.hour.toString().padLeft(2, '0');
   final String minute = local.minute.toString().padLeft(2, '0');
   return '${local.year}-$month-$day $hour:$minute';
+}
+
+String _formatBytes(int bytes) {
+  if (bytes >= 1000000) {
+    return '${(bytes / 1000000).toStringAsFixed(1)} MB';
+  }
+  if (bytes >= 1000) {
+    return '${(bytes / 1000).toStringAsFixed(0)} KB';
+  }
+  return '$bytes B';
 }

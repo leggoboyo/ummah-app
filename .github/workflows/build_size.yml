@@ -1,0 +1,36 @@
+name: Build Size Report
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request:
+
+jobs:
+  android-build-size:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Bootstrap workspace
+        run: |
+          dart pub get
+          dart run melos bootstrap
+
+      - name: Build Android App Bundle
+        working-directory: mobile/app
+        run: flutter build appbundle --dart-define-from-file=env/staging.json
+
+      - name: Report build sizes
+        run: ./scripts/report_build_sizes.sh
+
+      - name: Upload size report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-size-report
+          path: build/build-size-report.md

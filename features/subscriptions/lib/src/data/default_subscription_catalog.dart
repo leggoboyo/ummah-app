@@ -25,9 +25,9 @@ List<SubscriptionProduct> buildDefaultSubscriptionCatalog() {
     SubscriptionProduct(
       id: 'quran_plus_addon',
       title: 'Quran Plus',
-      tagline: 'Advanced tafsir, audio packs, and memorization tools.',
+      tagline: 'Audio packs, tafsir upgrades, and premium Quran study tools.',
       description:
-          'Unlocks future premium Quran study tools while keeping the base reader free.',
+          'Unlocks optional Quran audio packs, future tafsir/study upgrades, and keeps the base reader free.',
       kind: SubscriptionProductKind.lifetimeAddOn,
       primaryEntitlement: AppEntitlement.quranPlus,
       includesEntitlements: <AppEntitlement>{
@@ -39,9 +39,9 @@ List<SubscriptionProduct> buildDefaultSubscriptionCatalog() {
       id: 'hadith_plus_addon',
       title: 'Hadith Plus',
       tagline:
-          'Sunni hadith library, offline search, and future licensed expansions.',
+          'Extra Hadith language packs, advanced study tools, and future licensed expansions.',
       description:
-          'Unlocks the current hadith library module and future premium hadith enhancements.',
+          'Keeps the core Sunni Hadith Finder free while unlocking extra language packs and future premium Hadith study features.',
       kind: SubscriptionProductKind.lifetimeAddOn,
       primaryEntitlement: AppEntitlement.hadithPlus,
       includesEntitlements: <AppEntitlement>{
@@ -67,7 +67,7 @@ List<SubscriptionProduct> buildDefaultSubscriptionCatalog() {
       title: 'Ask Hadith AI',
       tagline: 'Citation-first hadith Q&A with explicit safety boundaries.',
       description:
-          'Unlocks the hadith retrieval assistant and includes Hadith Plus so the local hadith source cache is available.',
+          'Unlocks the hadith retrieval assistant and includes Hadith Plus for extra bundled Hadith languages and future premium study tools.',
       kind: SubscriptionProductKind.subscription,
       primaryEntitlement: AppEntitlement.aiHadith,
       includesEntitlements: <AppEntitlement>{

@@ -1,0 +1,14 @@
+{
+  "name": "content-pack-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test",
+    "audit": "npm audit --omit=dev --audit-level=high"
+  },
+  "devDependencies": {
+    "wrangler": "^4.12.0"
+  }
+}

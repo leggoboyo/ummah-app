@@ -23,13 +23,10 @@ class DataPrivacyScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: <Widget>[
               Card(
-                child: SwitchListTile(
-                  value: appController.analyticsEnabled,
-                  onChanged: (bool value) =>
-                      appController.updateAnalyticsEnabled(value),
-                  title: const Text('Privacy analytics opt-in'),
-                  subtitle: const Text(
-                    'Off by default. No analytics SDK is connected in this build today. This setting is stored now so analytics can stay consent-based later.',
+                child: const ListTile(
+                  title: Text('Analytics posture'),
+                  subtitle: Text(
+                    'No analytics or telemetry SDK is connected in this build. The app does not send usage tracking by default.',
                   ),
                 ),
               ),
@@ -37,10 +34,11 @@ class DataPrivacyScreen extends StatelessWidget {
               const _SectionCard(
                 title: 'Stored locally on this device',
                 lines: <String>[
-                  'Prayer settings, fiqh profile, language, manual coordinates, notification preferences, and analytics opt-in.',
+                  'Prayer settings, fiqh profile, language, manual coordinates, and notification preferences.',
+                  'Your setup choices: which content packs to download now, which ones to defer, Wi‑Fi-only preference, and storage-saver mode.',
                   'Prayer notification planning state and notification health snapshots.',
                   'Quran Arabic text plus any translations you explicitly cache for offline use.',
-                  'Hadith categories and hadith text you explicitly download for offline use.',
+                  'Installed Sunni Hadith language packs plus your offline Hadith Finder search state.',
                   'Fiqh checklist progress, scholar-feed follow choices, and local diagnostics logs.',
                   'Your OpenAI API key, if you enable BYOK, is stored in secure OS storage.',
                 ],
@@ -49,8 +47,8 @@ class DataPrivacyScreen extends StatelessWidget {
               const _SectionCard(
                 title: 'Sent over the network only when you ask',
                 lines: <String>[
-                  'QuranEnc requests when you refresh the translation catalog or download translations.',
-                  'HadeethEnc requests when you refresh hadith categories or download hadith content.',
+                  'QuranEnc requests when you refresh the translation catalog or when setup downloads the translation packs you selected.',
+                  'HadeethEnc requests only when you install or refresh Sunni Hadith language packs that are not already on the device.',
                   'IslamHouse public feed requests when you refresh followed scholar feeds.',
                   'OpenAI requests only when you open AI Assistant and submit a question with BYOK enabled.',
                 ],
@@ -69,7 +67,7 @@ class DataPrivacyScreen extends StatelessWidget {
                 child: ListTile(
                   title: const Text('Current privacy posture'),
                   subtitle: Text(
-                    'Location mode: ${appController.locationMode.name}. Billing: ${appController.billingAvailability.label}. Analytics: ${appController.analyticsEnabled ? 'enabled' : 'disabled'}.',
+                    'Location mode: ${appController.locationMode.name}. Billing: ${appController.billingAvailability.label}. Analytics SDK: disabled.',
                   ),
                 ),
               ),

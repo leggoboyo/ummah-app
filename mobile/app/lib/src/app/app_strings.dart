@@ -47,9 +47,9 @@ class AppStrings {
       );
 
   String get welcomeIntro => _pick(
-        en: 'Choose your fiqh profile, prayer defaults, location, and Quran starter setup. You can change them later.',
-        ar: 'اختر الملف الفقهي، وإعدادات الصلاة، والموقع، وبداية إعداد القرآن. يمكنك تعديلها لاحقاً.',
-        ur: 'اپنا فقہی پروفائل، نماز کی بنیادی ترتیبات، مقام، اور قرآن کی ابتدائی سیٹ اپ منتخب کریں۔ بعد میں یہ سب بدلا جا سکتا ہے۔',
+        en: 'Choose your fiqh profile, prayer defaults, location, and which reading packs you want first. You can change them later.',
+        ar: 'اختر الملف الفقهي، وإعدادات الصلاة، والموقع، وحزم القراءة التي تريدها أولاً. يمكنك تعديلها لاحقاً.',
+        ur: 'اپنا فقہی پروفائل، نماز کی بنیادی ترتیبات، مقام، اور وہ مطالعہ پیک منتخب کریں جو آپ پہلے چاہتے ہیں۔ بعد میں یہ سب بدلا جا سکتا ہے۔',
       );
 
   String get languageTitle => _pick(en: 'Language', ar: 'اللغة', ur: 'زبان');

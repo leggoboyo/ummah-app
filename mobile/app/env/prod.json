@@ -2,7 +2,7 @@
   "appFlavor": "prod",
   "hostedAiEnabled": false,
   "entitlementProvider": "revenuecat",
-  "apiBaseUrl": "",
+  "apiBaseUrl": "https://ummah-content-pack-worker.zkhawaja721.workers.dev",
   "revenueCatAndroidPublicSdkKey": "goog_WpPjCWuUjDBNYbEVuAWFQUsmlVQ",
   "revenueCatIosPublicSdkKey": ""
 }

@@ -106,7 +106,8 @@ class QuranRepository {
       normalizedArabicQuery.isEmpty ? trimmed : normalizedArabicQuery,
     );
     final String translationFtsQuery = _buildFtsQuery(trimmed);
-    final Map<String, QuranSearchResult> deduped = <String, QuranSearchResult>{};
+    final Map<String, QuranSearchResult> deduped =
+        <String, QuranSearchResult>{};
 
     final ResultSet arabicRows = db.select(
       '''
@@ -397,7 +398,7 @@ class QuranRepository {
           ]);
         }
       } finally {
-        statement.dispose();
+        statement.close();
       }
     });
 
@@ -424,8 +425,8 @@ class QuranRepository {
       translationKey,
       languageCode: translation.languageCode,
     );
-    final bool versionChanged =
-        existingVersion != null && existingVersion.version != translation.version;
+    final bool versionChanged = existingVersion != null &&
+        existingVersion.version != translation.version;
 
     _runInTransaction(db, () {
       if (versionChanged) {
@@ -498,8 +499,8 @@ class QuranRepository {
             ]);
           }
         } finally {
-          ayahStatement.dispose();
-          ftsStatement.dispose();
+          ayahStatement.close();
+          ftsStatement.close();
         }
 
         final String syncedAt = DateTime.now().toIso8601String();
@@ -559,6 +560,47 @@ class QuranRepository {
     );
   }
 
+  Future<void> removeTranslation({
+    required String translationKey,
+  }) async {
+    final QuranTranslationInfo translation = await _requireTranslationInfo(
+      translationKey,
+    );
+    final Database db = await _db;
+    _termFrequencyCache.remove(_translationCacheKey(translationKey));
+    _runInTransaction(db, () {
+      db.execute(
+        'DELETE FROM translation_ayahs WHERE translation_key = ?1',
+        <Object?>[translationKey],
+      );
+      db.execute(
+        'DELETE FROM translation_fts WHERE translation_key = ?1',
+        <Object?>[translationKey],
+      );
+      db.execute(
+        '''
+        UPDATE translation_catalog
+        SET last_synced_at = NULL
+        WHERE translation_key = ?1
+        ''',
+        <Object?>[translationKey],
+      );
+      db.execute(
+        '''
+        DELETE FROM source_versions
+        WHERE provider_key = ?1
+          AND content_key = ?2
+          AND language_code = ?3
+        ''',
+        <Object?>[
+          'quranenc',
+          translationKey,
+          translation.languageCode,
+        ],
+      );
+    });
+  }
+
   Future<SourceVersion?> getArabicSourceVersion() {
     return _getSourceVersion(
       providerKey: 'tanzil',
@@ -602,7 +644,7 @@ class QuranRepository {
   }
 
   Future<void> dispose() async {
-    _database?.dispose();
+    _database?.close();
     _database = null;
   }
 
@@ -711,9 +753,9 @@ class QuranRepository {
           ]);
         }
       } finally {
-        surahStatement.dispose();
-        ayahStatement.dispose();
-        ayahFtsStatement.dispose();
+        surahStatement.close();
+        ayahStatement.close();
+        ayahFtsStatement.close();
       }
 
       _upsertSourceVersion(
@@ -763,7 +805,8 @@ class QuranRepository {
     );
   }
 
-  Future<QuranTranslationInfo> _requireTranslationInfo(String translationKey) async {
+  Future<QuranTranslationInfo> _requireTranslationInfo(
+      String translationKey) async {
     final Database db = await _db;
     final ResultSet rows = db.select(
       '''
@@ -840,8 +883,7 @@ class QuranRepository {
       lastRemoteUpdate:
           DateTime.parse(row['last_remote_update'] as String).toLocal(),
       databaseUrl: row['database_url'] as String?,
-      databaseUncompressedUrl:
-          row['database_uncompressed_url'] as String?,
+      databaseUncompressedUrl: row['database_uncompressed_url'] as String?,
       isDownloaded: (row['is_downloaded'] as int) == 1,
       cachedAyahCount: (row['cached_ayah_count'] as int?) ?? 0,
       totalAyahCount: (row['total_ayah_count'] as int?) ?? 0,
@@ -1127,10 +1169,10 @@ class QuranRepository {
       costs[0] = i;
       for (int j = 1; j <= target.length; j += 1) {
         final int current = costs[j];
-        final int substitution = source.codeUnitAt(i - 1) ==
-                target.codeUnitAt(j - 1)
-            ? previous
-            : previous + 1;
+        final int substitution =
+            source.codeUnitAt(i - 1) == target.codeUnitAt(j - 1)
+                ? previous
+                : previous + 1;
         costs[j] = <int>[
           costs[j] + 1,
           costs[j - 1] + 1,

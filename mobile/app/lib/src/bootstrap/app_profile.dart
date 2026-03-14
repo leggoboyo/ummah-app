@@ -14,6 +14,36 @@ enum QuranStartupMode {
   fullTranslation,
 }
 
+StartupSelection _defaultStartupSelectionForMode(QuranStartupMode mode) {
+  switch (mode) {
+    case QuranStartupMode.arabicOnly:
+      return const StartupSelection(
+        preset: StartupSetupPreset.lightest,
+        selectedPackIds: <String>[
+          'core_prayer',
+          'quran_arabic',
+        ],
+        deferredPackIds: <String>[],
+        wifiOnlyDownloads: true,
+        storageSaverMode: true,
+      );
+    case QuranStartupMode.starterPack:
+    case QuranStartupMode.fullTranslation:
+      return const StartupSelection(
+        preset: StartupSetupPreset.recommendedStudy,
+        selectedPackIds: <String>[
+          'core_prayer',
+          'quran_arabic',
+          'quran_translation:default',
+          'hadith_pack:default',
+        ],
+        deferredPackIds: <String>[],
+        wifiOnlyDownloads: true,
+        storageSaverMode: false,
+      );
+  }
+}
+
 class AppProfile {
   AppProfile({
     required this.onboardingComplete,
@@ -27,6 +57,7 @@ class AppProfile {
     required this.manualCoordinates,
     required this.preciseAndroidAlarms,
     required this.quranStartupMode,
+    required this.startupSelection,
     required this.analyticsEnabled,
     this.adhanSoundKey = 'default',
   });
@@ -54,6 +85,9 @@ class AppProfile {
       manualCoordinates: defaultPreset.coordinates,
       preciseAndroidAlarms: false,
       quranStartupMode: QuranStartupMode.fullTranslation,
+      startupSelection: _defaultStartupSelectionForMode(
+        QuranStartupMode.fullTranslation,
+      ),
       analyticsEnabled: false,
     );
   }
@@ -69,6 +103,7 @@ class AppProfile {
   final Coordinates manualCoordinates;
   final bool preciseAndroidAlarms;
   final QuranStartupMode quranStartupMode;
+  final StartupSelection startupSelection;
   final bool analyticsEnabled;
   final String adhanSoundKey;
 
@@ -84,6 +119,7 @@ class AppProfile {
     Coordinates? manualCoordinates,
     bool? preciseAndroidAlarms,
     QuranStartupMode? quranStartupMode,
+    StartupSelection? startupSelection,
     bool? analyticsEnabled,
     String? adhanSoundKey,
   }) {
@@ -99,6 +135,7 @@ class AppProfile {
       manualCoordinates: manualCoordinates ?? this.manualCoordinates,
       preciseAndroidAlarms: preciseAndroidAlarms ?? this.preciseAndroidAlarms,
       quranStartupMode: quranStartupMode ?? this.quranStartupMode,
+      startupSelection: startupSelection ?? this.startupSelection,
       analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
       adhanSoundKey: adhanSoundKey ?? this.adhanSoundKey,
     );
@@ -119,6 +156,11 @@ class AppProfile {
       'manualLongitude': manualCoordinates.longitude,
       'preciseAndroidAlarms': preciseAndroidAlarms,
       'quranStartupMode': quranStartupMode.name,
+      'startupSetupPreset': startupSelection.preset.name,
+      'selectedPackIds': startupSelection.selectedPackIds,
+      'deferredPackIds': startupSelection.deferredPackIds,
+      'wifiOnlyDownloads': startupSelection.wifiOnlyDownloads,
+      'storageSaverMode': startupSelection.storageSaverMode,
       'analyticsEnabled': analyticsEnabled,
       'adhanSoundKey': adhanSoundKey,
     };
@@ -144,6 +186,40 @@ class AppProfile {
     final ManualLocationPreset inferredPreset = closestManualLocationPreset(
       manualCoordinates,
     );
+    final QuranStartupMode startupMode = () {
+      final String? raw = json['quranStartupMode'] as String?;
+      if (raw == 'starterPack') {
+        return QuranStartupMode.fullTranslation;
+      }
+      return QuranStartupMode.values.firstWhere(
+        (QuranStartupMode value) => value.name == raw,
+        orElse: () => defaults.quranStartupMode,
+      );
+    }();
+    final List<String>? selectedPackIds =
+        (json['selectedPackIds'] as List<dynamic>?)
+            ?.whereType<String>()
+            .toList(growable: false);
+    final List<String>? deferredPackIds =
+        (json['deferredPackIds'] as List<dynamic>?)
+            ?.whereType<String>()
+            .toList(growable: false);
+    final StartupSelection startupSelection =
+        selectedPackIds == null || selectedPackIds.isEmpty
+            ? _defaultStartupSelectionForMode(startupMode)
+            : StartupSelection(
+                preset: StartupSetupPreset.values.firstWhere(
+                  (StartupSetupPreset value) =>
+                      value.name == json['startupSetupPreset'],
+                  orElse: () => defaults.startupSelection.preset,
+                ),
+                selectedPackIds: selectedPackIds,
+                deferredPackIds: deferredPackIds ?? const <String>[],
+                wifiOnlyDownloads: json['wifiOnlyDownloads'] as bool? ??
+                    defaults.startupSelection.wifiOnlyDownloads,
+                storageSaverMode: json['storageSaverMode'] as bool? ??
+                    defaults.startupSelection.storageSaverMode,
+              );
 
     return AppProfile(
       onboardingComplete: json['onboardingComplete'] as bool? ?? false,
@@ -170,18 +246,9 @@ class AppProfile {
       manualCoordinates: manualCoordinates,
       preciseAndroidAlarms: json['preciseAndroidAlarms'] as bool? ??
           defaults.preciseAndroidAlarms,
-      quranStartupMode: () {
-        final String? raw = json['quranStartupMode'] as String?;
-        if (raw == 'starterPack') {
-          return QuranStartupMode.fullTranslation;
-        }
-        return QuranStartupMode.values.firstWhere(
-          (QuranStartupMode value) => value.name == raw,
-          orElse: () => defaults.quranStartupMode,
-        );
-      }(),
-      analyticsEnabled:
-          json['analyticsEnabled'] as bool? ?? defaults.analyticsEnabled,
+      quranStartupMode: startupMode,
+      startupSelection: startupSelection,
+      analyticsEnabled: false,
       adhanSoundKey: json['adhanSoundKey'] as String? ?? defaults.adhanSoundKey,
     );
   }

@@ -7,8 +7,13 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'app_environment.dart';
+import 'app_identity_store.dart';
+import 'app_location_resolver.dart';
+import 'app_location_state.dart';
+import 'app_notification_sync_service.dart';
 import 'app_profile.dart';
 import 'app_profile_store.dart';
+import 'app_support_report_builder.dart';
 import 'device_location_service.dart';
 import 'diagnostics_logger.dart';
 import 'local_notifications_service.dart';
@@ -24,32 +29,49 @@ class AppController extends ChangeNotifier {
     PrayerTimeCalculator? prayerTimeCalculator,
     QiblaCalculator? qiblaCalculator,
     AppEnvironment? environment,
+    AppIdentityStore? identityStore,
     DiagnosticsLogger? logger,
     SubscriptionRepository? subscriptionRepository,
+    AppLocationResolver? locationResolver,
+    AppNotificationSyncService? notificationSyncService,
+    AppSupportReportBuilder? supportReportBuilder,
   })  : _profileStore = profileStore ?? SharedPreferencesAppProfileStore(),
         _environment = environment ?? AppEnvironment.fromCompileTime(),
+        _identityStore = identityStore ?? SharedPreferencesAppIdentityStore(),
         _logger = logger ?? _buildDiagnosticsLogger(),
-        _locationService =
-            locationService ?? const GeolocatorDeviceLocationService(),
-        _notificationsService =
-            notificationsService ?? LocalPrayerNotificationsService(),
+        _locationResolver = locationResolver ??
+            AppLocationResolver(
+              locationService:
+                  locationService ?? const GeolocatorDeviceLocationService(),
+              describeTimeZone: _describeTimeZoneForDate,
+            ),
+        _notificationSyncService = notificationSyncService ??
+            AppNotificationSyncService(
+              notificationsService:
+                  notificationsService ?? LocalPrayerNotificationsService(),
+            ),
         _prayerTimeCalculator =
             prayerTimeCalculator ?? const PrayerTimeCalculator(),
         _qiblaCalculator = qiblaCalculator ?? const QiblaCalculator(),
+        _supportReportBuilder =
+            supportReportBuilder ?? const AppSupportReportBuilder(),
         _subscriptionRepository = subscriptionRepository ??
             SubscriptionRepository(
               provider: _buildSubscriptionProvider(
                 environment ?? AppEnvironment.fromCompileTime(),
+                identityStore ?? SharedPreferencesAppIdentityStore(),
               ),
             );
 
   final AppProfileStore _profileStore;
   final AppEnvironment _environment;
+  final AppIdentityStore _identityStore;
   final DiagnosticsLogger _logger;
-  final DeviceLocationService _locationService;
-  final PrayerNotificationsService _notificationsService;
+  final AppLocationResolver _locationResolver;
+  final AppNotificationSyncService _notificationSyncService;
   final PrayerTimeCalculator _prayerTimeCalculator;
   final QiblaCalculator _qiblaCalculator;
+  final AppSupportReportBuilder _supportReportBuilder;
   final SubscriptionRepository _subscriptionRepository;
 
   AppProfile _profile = AppProfile.defaults();
@@ -58,6 +80,7 @@ class AppController extends ChangeNotifier {
   SubscriptionState? _subscriptionState;
   String _locationMessage =
       'Manual coordinates are active until setup is complete.';
+  String? _revenueCatAppUserId;
 
   bool isReady = false;
   bool isWorking = false;
@@ -96,6 +119,8 @@ class AppController extends ChangeNotifier {
 
   QuranStartupMode get quranStartupMode => _profile.quranStartupMode;
 
+  StartupSelection get startupSelection => _profile.startupSelection;
+
   Coordinates get activeCoordinates =>
       _resolvedCoordinates ?? _profile.manualCoordinates;
 
@@ -126,6 +151,8 @@ class AppController extends ChangeNotifier {
 
   DateTime? get entitlementSyncTime => _subscriptionState?.lastSyncedAt;
 
+  String? get revenueCatAppUserId => _revenueCatAppUserId;
+
   PrayerNotificationPreferences get notificationPreferences =>
       PrayerNotificationPreferences(
         preciseAndroidAlarms: _profile.preciseAndroidAlarms,
@@ -148,7 +175,8 @@ class AppController extends ChangeNotifier {
       AppLogLevel.info,
       'App bootstrap started for ${_environment.buildLabel}.',
     );
-    await _notificationsService.initialize();
+    await _notificationSyncService.initialize();
+    _revenueCatAppUserId = await _identityStore.ensureRevenueCatAppUserId();
     _profile = await _profileStore.load();
     await _initializeSubscriptions();
 
@@ -280,6 +308,7 @@ class AppController extends ChangeNotifier {
     required Coordinates selectedManualCoordinates,
     required bool preciseAndroidAlarms,
     required QuranStartupMode selectedQuranStartupMode,
+    required StartupSelection startupSelection,
   }) async {
     isWorking = true;
     notifyListeners();
@@ -298,6 +327,7 @@ class AppController extends ChangeNotifier {
         manualCoordinates: selectedManualCoordinates,
         preciseAndroidAlarms: preciseAndroidAlarms,
         quranStartupMode: selectedQuranStartupMode,
+        startupSelection: startupSelection,
       );
 
       await _profileStore.save(_profile);
@@ -308,7 +338,7 @@ class AppController extends ChangeNotifier {
       );
       await _logger.log(
         AppLogLevel.info,
-        'Onboarding completed with ${selectedFiqhProfile.label}, ${selectedMethod.name}, and ${selectedLocationMode.name} location mode.',
+        'Onboarding completed with ${selectedFiqhProfile.label}, ${selectedMethod.name}, ${selectedLocationMode.name} location mode, and ${startupSelection.selectedPackIds.length} selected content packs.',
       );
     } finally {
       isWorking = false;
@@ -328,7 +358,7 @@ class AppController extends ChangeNotifier {
     );
     _resolvedCoordinates = coordinates;
     _locationMessage =
-        'Using ${closestPreset.label} (${_timeZoneDescriptionForDate(closestPreset.timeZoneId, DateTime.now())}) for manual prayer times.';
+        'Using ${closestPreset.label} (${_describeTimeZoneForDate(closestPreset.timeZoneId, DateTime.now())}) for manual prayer times.';
     bannerMessage = null;
     await _profileStore.save(_profile);
     if (_profile.onboardingComplete) {
@@ -336,7 +366,7 @@ class AppController extends ChangeNotifier {
     }
     await _logger.log(
       AppLogLevel.info,
-      'Manual coordinates updated to ${coordinates.latitude.toStringAsFixed(4)}, ${coordinates.longitude.toStringAsFixed(4)}.',
+      'Manual coordinates updated for ${closestPreset.label}.',
     );
     notifyListeners();
   }
@@ -384,7 +414,7 @@ class AppController extends ChangeNotifier {
     );
     _resolvedCoordinates = preset.coordinates;
     _locationMessage =
-        'Using ${preset.label} (${_timeZoneDescriptionForDate(preset.timeZoneId, DateTime.now())}) for manual prayer times.';
+        'Using ${preset.label} (${_describeTimeZoneForDate(preset.timeZoneId, DateTime.now())}) for manual prayer times.';
     bannerMessage = null;
     await _profileStore.save(_profile);
     if (_profile.onboardingComplete) {
@@ -456,37 +486,20 @@ class AppController extends ChangeNotifier {
   Future<void> _resolveLocation({
     required bool requestPermission,
   }) async {
-    if (_profile.locationMode == AppLocationMode.manual) {
-      _resolvedCoordinates = _profile.manualCoordinates;
-      _locationMessage =
-          'Using ${_profile.manualLocationLabel} (${_timeZoneDescriptionForDate(_profile.manualTimeZoneId, DateTime.now())}) for manual prayer times.';
-      return;
-    }
-
-    final DeviceLocationResult result = await _locationService.resolve(
+    final AppLocationState locationState = await _locationResolver.resolve(
+      profile: _profile,
       requestPermission: requestPermission,
     );
-
-    if (result.coordinates != null) {
-      _resolvedCoordinates = result.coordinates;
-      _locationMessage = result.message;
-      bannerMessage = null;
-      return;
-    }
-
-    _resolvedCoordinates = _profile.manualCoordinates;
-    _locationMessage = result.message;
-    bannerMessage = result.message;
+    _resolvedCoordinates = locationState.coordinates;
+    _locationMessage = locationState.summary;
+    bannerMessage = locationState.bannerMessage;
   }
 
   Future<void> _syncNotifications({
     required bool requestPermissions,
   }) async {
-    if (!_profile.onboardingComplete) {
-      return;
-    }
-
-    _notificationSyncResult = await _notificationsService.syncPrayerSchedule(
+    _notificationSyncResult = await _notificationSyncService.sync(
+      profile: _profile,
       now: DateTime.now(),
       settings: prayerSettingsFor(DateTime.now()),
       preferences: notificationPreferences,
@@ -494,6 +507,9 @@ class AppController extends ChangeNotifier {
       coordinates: activeCoordinates,
       requestPermissions: requestPermissions,
     );
+    if (_notificationSyncResult == null) {
+      return;
+    }
     if (_notificationSyncResult?.notificationsEnabled == false) {
       bannerMessage = _notificationSyncResult?.health.message;
     }
@@ -518,16 +534,6 @@ class AppController extends ChangeNotifier {
     };
   }
 
-  Future<void> updateAnalyticsEnabled(bool enabled) async {
-    _profile = _profile.copyWith(analyticsEnabled: enabled);
-    await _profileStore.save(_profile);
-    await _logger.log(
-      AppLogLevel.info,
-      'Privacy analytics opt-in changed to $enabled.',
-    );
-    notifyListeners();
-  }
-
   Future<List<AppLogEntry>> loadDiagnosticsEntries() {
     return _logger.entries();
   }
@@ -536,54 +542,30 @@ class AppController extends ChangeNotifier {
     await _logger.clear();
   }
 
-  Future<String> buildDiagnosticsReport() async {
+  Future<String> buildDiagnosticsReport({
+    bool includeSensitiveDetails = false,
+  }) async {
     final List<AppLogEntry> entries = await _logger.entries();
-    final List<String> lines = <String>[
-      'Ummah App Support Report',
-      'Generated: ${DateTime.now().toIso8601String()}',
-      'Build: ${_environment.buildLabel}',
-      'Hosted AI enabled: ${_environment.hostedAiEnabled}',
-      'API base URL: ${_environment.apiBaseUrl.isEmpty ? 'Not set' : _environment.apiBaseUrl}',
-      'Language: ${_profile.languageCode}',
-      'Fiqh profile: ${_profile.fiqhProfile.label}',
-      'Calculation method: ${_profile.calculationMethod.name}',
-      'Location mode: ${_profile.locationMode.name}',
-      'Manual location: ${_profile.manualLocationLabel}',
-      'Manual time zone: ${_profile.manualTimeZoneId}',
-      'Manual coordinates: ${_profile.manualCoordinates.latitude.toStringAsFixed(4)}, ${_profile.manualCoordinates.longitude.toStringAsFixed(4)}',
-      'Quran startup mode: ${_profile.quranStartupMode.name}',
-      'Analytics enabled: ${_profile.analyticsEnabled}',
-      'Adhan sound: ${_profile.adhanSoundKey}',
-      'Billing provider: ${billingProviderKind.label}',
-      'Billing availability: ${billingAvailability.label}',
-      'Billing status: ${subscriptionStatusMessage ?? 'No status yet'}',
-      'Notification health: ${notificationHealth?.status.name ?? 'unknown'}',
-      'Notification message: ${notificationHealth?.message ?? 'No message yet'}',
-      'Resolved location: $locationSummary',
-      'Active coordinates: ${activeCoordinates.latitude.toStringAsFixed(4)}, ${activeCoordinates.longitude.toStringAsFixed(4)}',
-      'Active time zone offset: ${activeTimeZoneOffset.inMinutes} minutes',
-      'Entitlements: ${entitlements.map((AppEntitlement entitlement) => entitlement.key).toList()..sort()}',
-      '',
-      'Local log entries (${entries.length}):',
-    ];
-
-    for (final AppLogEntry entry in entries) {
-      lines.add(
-        '- ${entry.timestamp.toIso8601String()} [${entry.level.name}] ${entry.message}',
-      );
-      if (entry.error != null) {
-        lines.add('  error: ${entry.error}');
-      }
-      if (entry.stackTrace != null) {
-        lines.add('  stack: ${entry.stackTrace}');
-      }
-    }
-
-    return lines.join('\n');
+    return _supportReportBuilder.build(
+      environment: _environment,
+      profile: _profile,
+      entitlements: entitlements,
+      billingProviderKind: billingProviderKind,
+      billingAvailability: billingAvailability,
+      subscriptionStatusMessage: subscriptionStatusMessage,
+      notificationHealth: notificationHealth,
+      locationSummary: locationSummary,
+      activeCoordinates: activeCoordinates,
+      activeTimeZoneOffset: activeTimeZoneOffset,
+      revenueCatAppUserId: _revenueCatAppUserId,
+      entries: entries,
+      includeSensitiveDetails: includeSensitiveDetails,
+    );
   }
 
   static SubscriptionProvider _buildSubscriptionProvider(
     AppEnvironment environment,
+    AppIdentityStore identityStore,
   ) {
     switch (environment.entitlementProvider) {
       case EntitlementProviderMode.preview:
@@ -593,6 +575,7 @@ class AppController extends ChangeNotifier {
       case EntitlementProviderMode.revenueCat:
         return RevenueCatMobileSubscriptionProvider(
           environment: environment,
+          identityStore: identityStore,
         );
       case EntitlementProviderMode.none:
         return CatalogOnlySubscriptionProvider(
@@ -627,7 +610,7 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  String _timeZoneDescriptionForDate(String timeZoneId, DateTime date) {
+  static String _describeTimeZoneForDate(String timeZoneId, DateTime date) {
     _ensureTimeZonesReady();
     try {
       final tz.Location location = tz.getLocation(timeZoneId);
@@ -649,7 +632,7 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  void _ensureTimeZonesReady() {
+  static void _ensureTimeZonesReady() {
     if (_timeZonesReady) {
       return;
     }

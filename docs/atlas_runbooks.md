@@ -5,6 +5,68 @@ This file is for website or account steps that Codex cannot finish alone.
 Use these prompts in Atlas agentic mode. Each prompt is designed to run
 autonomously and stop only for required human login or approval.
 
+## Cloudflare Remote Hadith Packs
+
+Use this when Codex says the remote Hadith pack Worker/R2 layer is ready in the
+repo and only Cloudflare account setup is left.
+
+```text
+Set up the Cloudflare infrastructure for Ummah App remote Hadith packs as autonomously as possible.
+
+Context:
+- Repo already contains a Cloudflare Worker at:
+  /Users/zohaibkhawaja/Documents/Codex/ummah-app/services/content-pack-worker
+- Remote Hadith pack artifacts are generated at:
+  /Users/zohaibkhawaja/Documents/Codex/ummah-app/features/hadith/dist/packs
+- Goal:
+  - host remote HadeethEnc pack files in Cloudflare R2
+  - expose a Worker that serves the manifest and signed download access
+  - use staging/prod manifest object keys
+- Required Cloudflare products:
+  - R2 bucket
+  - KV namespace
+  - Worker
+- RevenueCat is already used for billing in this app
+
+Worker expectations:
+- GET /v1/packs/manifest
+- POST /v1/packs/access
+- GET /v1/packs/download
+
+Your job:
+1. Open Cloudflare and confirm the authenticated account.
+2. Create or reuse one R2 bucket for content packs.
+3. Create or reuse one KV namespace for starter-pack claims.
+4. In the repo Worker project, update wrangler.toml bindings with the real bucket and KV IDs if needed.
+5. Upload the generated Hadith pack objects from:
+   /Users/zohaibkhawaja/Documents/Codex/ummah-app/features/hadith/dist/packs/objects
+   into the R2 bucket, preserving the object-key structure exactly.
+6. Upload the generated manifest file twice in the R2 bucket as:
+   - staging/manifest.json
+   - prod/manifest.json
+7. Set Worker secrets:
+   - DOWNLOAD_SIGNING_SECRET
+   - REVENUECAT_API_KEY
+8. Deploy the Worker from:
+   /Users/zohaibkhawaja/Documents/Codex/ummah-app/services/content-pack-worker
+9. Return a clean summary containing:
+   - R2 bucket name
+   - KV namespace name/id
+   - Worker name
+   - deployed Worker URL
+   - any custom domain configured, if any
+   - where wrangler.toml was updated
+   - which secrets were added
+   - anything still blocked
+10. Stop only for required login, 2FA, secret-value entry, or unavoidable account approval.
+
+Preferred behavior:
+- Be autonomous
+- Reuse existing Cloudflare resources when sensible
+- Preserve the generated object-key layout
+- Do not expose secret values in chat
+```
+
 ## RevenueCat Live Billing Setup
 
 Use this when the app is ready for internal store testing and you have the

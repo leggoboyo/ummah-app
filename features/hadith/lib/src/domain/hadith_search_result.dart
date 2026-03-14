@@ -7,6 +7,9 @@ class HadithSearchResult {
     required this.explanation,
     required this.attribution,
     required this.grade,
+    this.sourceReference = '',
+    this.sourceUrl = '',
+    this.matchReasons = const <String>[],
   });
 
   final int id;
@@ -16,4 +19,7 @@ class HadithSearchResult {
   final String explanation;
   final String attribution;
   final String grade;
+  final String sourceReference;
+  final String sourceUrl;
+  final List<String> matchReasons;
 }

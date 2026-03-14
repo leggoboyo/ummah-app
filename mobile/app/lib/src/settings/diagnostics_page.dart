@@ -20,6 +20,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   List<AppLogEntry> _entries = const <AppLogEntry>[];
   bool _isLoading = true;
   bool _isCopying = false;
+  bool _isCopyingDetailed = false;
   String? _errorMessage;
 
   @override
@@ -58,25 +59,38 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     }
   }
 
-  Future<void> _copyReport() async {
+  Future<void> _copyReport({
+    required bool includeSensitiveDetails,
+  }) async {
     setState(() {
-      _isCopying = true;
+      if (includeSensitiveDetails) {
+        _isCopyingDetailed = true;
+      } else {
+        _isCopying = true;
+      }
     });
     try {
-      final String report = await widget.appController.buildDiagnosticsReport();
+      final String report = await widget.appController.buildDiagnosticsReport(
+        includeSensitiveDetails: includeSensitiveDetails,
+      );
       await Clipboard.setData(ClipboardData(text: report));
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Support report copied to the clipboard.'),
+        SnackBar(
+          content: Text(
+            includeSensitiveDetails
+                ? 'Detailed support report copied to the clipboard.'
+                : 'Redacted support report copied to the clipboard.',
+          ),
         ),
       );
     } finally {
       if (mounted) {
         setState(() {
           _isCopying = false;
+          _isCopyingDetailed = false;
         });
       }
     }
@@ -152,6 +166,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text('Location: ${appController.locationSummary}'),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Identifiers stay hidden on-screen. Use the detailed support report only when a support case explicitly asks for them.',
+                      ),
                     ],
                   ),
                 ),
@@ -165,8 +183,20 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                     runSpacing: 8,
                     children: <Widget>[
                       FilledButton.tonal(
-                        onPressed: _isCopying ? null : _copyReport,
-                        child: const Text('Copy support report'),
+                        onPressed: _isCopying
+                            ? null
+                            : () => _copyReport(
+                                  includeSensitiveDetails: false,
+                                ),
+                        child: const Text('Copy redacted report'),
+                      ),
+                      FilledButton.tonal(
+                        onPressed: _isCopyingDetailed
+                            ? null
+                            : () => _copyReport(
+                                  includeSensitiveDetails: true,
+                                ),
+                        child: const Text('Copy detailed report'),
                       ),
                       FilledButton.tonal(
                         onPressed: appController.isWorking

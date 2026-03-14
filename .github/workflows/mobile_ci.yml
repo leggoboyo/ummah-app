@@ -68,7 +68,6 @@ jobs:
   build-android:
     runs-on: macos-latest
     needs: analyze-and-test
-    if: ${{ hashFiles('mobile/app/android/**') != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -88,7 +87,6 @@ jobs:
   build-ios:
     runs-on: macos-latest
     needs: analyze-and-test
-    if: ${{ hashFiles('mobile/app/ios/**') != '' }}
     steps:
       - uses: actions/checkout@v4
 

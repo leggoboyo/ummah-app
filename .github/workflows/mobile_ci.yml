@@ -1,0 +1,69 @@
+name: Mobile CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'codex/**'
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Activate Melos
+        run: |
+          dart pub get
+          dart run melos bootstrap
+
+      - name: Analyze
+        run: dart run melos exec -c 1 -- flutter analyze
+
+      - name: Test
+        run: dart run melos exec -c 1 --dir-exists=test -- flutter test
+
+  build-android:
+    runs-on: macos-latest
+    needs: analyze-and-test
+    if: ${{ hashFiles('mobile/app/android/**') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Activate Melos
+        run: |
+          dart pub get
+          dart run melos bootstrap
+
+      - name: Build Android App Bundle
+        working-directory: mobile/app
+        run: flutter build appbundle --dart-define-from-file=env/staging.json
+
+  build-ios:
+    runs-on: macos-latest
+    needs: analyze-and-test
+    if: ${{ hashFiles('mobile/app/ios/**') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Activate Melos
+        run: |
+          dart pub get
+          dart run melos bootstrap
+
+      - name: Build iOS archive
+        working-directory: mobile/app
+        run: flutter build ipa --no-codesign --dart-define-from-file=env/staging.json

@@ -1,0 +1,16 @@
+name: ummah_app
+
+packages:
+  - mobile/app
+  - packages/**
+  - features/**
+
+scripts:
+  test:
+    run: dart run melos exec -c 1 -- flutter test
+    description: Run tests in every Flutter or Dart package.
+    packageFilters:
+      dirExists: test
+  analyze:
+    run: dart run melos exec -c 1 -- flutter analyze
+    description: Run static analysis in every Flutter package.

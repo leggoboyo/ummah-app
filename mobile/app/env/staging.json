@@ -1,0 +1,8 @@
+{
+  "appFlavor": "staging",
+  "hostedAiEnabled": false,
+  "entitlementProvider": "preview",
+  "apiBaseUrl": "",
+  "revenueCatAndroidPublicSdkKey": "",
+  "revenueCatIosPublicSdkKey": ""
+}

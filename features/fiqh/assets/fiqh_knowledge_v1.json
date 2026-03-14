@@ -1,0 +1,260 @@
+{
+  "version": "fiqh_knowledge_v1",
+  "displayVersion": "2026.03-starter",
+  "attribution": "Curated starter fiqh pack with cited references. This is not a fatwa service.",
+  "disclaimer": "This pack presents sourced school-based views for common topics. It does not replace qualified scholarly advice for context-heavy questions.",
+  "topics": [
+    {
+      "id": "five_daily_prayers",
+      "title": "Five Daily Prayers",
+      "shortTitle": "Daily prayers",
+      "category": "Daily obligations",
+      "summary": "The five daily prayers are obligatory for eligible adult Muslims across the schools represented in the app.",
+      "checklistLabel": "Review today's five daily prayers",
+      "frequencyLabel": "Daily",
+      "showInChecklist": true,
+      "showInDisputed": false,
+      "scholarEscalation": "If illness, travel, menstruation, post-partum bleeding, safety, or work constraints affect prayer timing or form, ask a qualified local scholar for case-specific guidance.",
+      "sortOrder": 10,
+      "rulings": [
+        {
+          "schoolProfiles": ["hanafi", "maliki", "shafii", "hanbali", "jafari"],
+          "classification": "obligatory",
+          "summary": "Perform the five daily prayers within their times.",
+          "notes": "The basic obligation is agreed upon. Details differ for missed prayers, shortening or combining, and who is currently excused.",
+          "contextChanges": "Travel, illness, danger, incapacity, menstruation, and post-partum bleeding change how or whether the duty is performed at that moment.",
+          "evidence": [
+            {
+              "type": "quran",
+              "citation": "Qur'an 4:103",
+              "title": "Prayer is prescribed for the believers at fixed times."
+            },
+            {
+              "type": "quran",
+              "citation": "Qur'an 2:43",
+              "title": "Establish prayer and give zakah."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ramadan_fasting",
+      "title": "Ramadan Fasting",
+      "shortTitle": "Ramadan fast",
+      "category": "Seasonal obligations",
+      "summary": "Fasting Ramadan is obligatory on eligible adult Muslims, with recognized exemptions and make-up rules.",
+      "checklistLabel": "Review fasting obligations for Ramadan",
+      "frequencyLabel": "Ramadan",
+      "showInChecklist": true,
+      "showInDisputed": false,
+      "scholarEscalation": "If pregnancy, breastfeeding, chronic illness, travel, work hardship, or medical treatment affect fasting, ask a qualified scholar and doctor for personalized guidance.",
+      "sortOrder": 20,
+      "rulings": [
+        {
+          "schoolProfiles": ["hanafi", "maliki", "shafii", "hanbali", "jafari"],
+          "classification": "obligatory",
+          "summary": "Fast Ramadan from true dawn to sunset when you are eligible and not presently excused.",
+          "notes": "The core obligation is agreed upon. What counts as a valid excuse, fidyah, and make-up timing can differ in application.",
+          "contextChanges": "Illness, travel, menstruation, post-partum bleeding, pregnancy, breastfeeding, and medical risk can change the ruling and the type of compensation owed.",
+          "evidence": [
+            {
+              "type": "quran",
+              "citation": "Qur'an 2:183",
+              "title": "Fasting is prescribed for you as it was prescribed for those before you."
+            },
+            {
+              "type": "quran",
+              "citation": "Qur'an 2:185",
+              "title": "Whoever witnesses the month should fast it, while the ill and traveler have make-up days."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zakat_al_mal",
+      "title": "Zakat al-Mal",
+      "shortTitle": "Zakat",
+      "category": "Financial obligations",
+      "summary": "Zakat on qualifying wealth is obligatory, but eligibility details vary by school and financial context.",
+      "checklistLabel": "Review annual zakat eligibility",
+      "frequencyLabel": "Annual",
+      "showInChecklist": true,
+      "showInDisputed": false,
+      "scholarEscalation": "Because nisab, debts, retirement accounts, business assets, and local tax structures can change the result, ask a qualified scholar when your finances are not straightforward.",
+      "sortOrder": 30,
+      "rulings": [
+        {
+          "schoolProfiles": ["hanafi", "maliki", "shafii", "hanbali", "jafari"],
+          "classification": "obligatory",
+          "summary": "Pay zakat when your qualifying wealth reaches nisab and the required holding period or condition is met in your school.",
+          "notes": "The underlying obligation is agreed upon. The treatment of debts, receivables, pension funds, jewelry, and business inventory differs across schools.",
+          "contextChanges": "Eligibility can change with asset type, debt load, ownership timing, and whether the wealth is accessible or productive.",
+          "evidence": [
+            {
+              "type": "quran",
+              "citation": "Qur'an 2:110",
+              "title": "Establish prayer and give zakah."
+            },
+            {
+              "type": "quran",
+              "citation": "Qur'an 9:103",
+              "title": "Take charity from their wealth to purify them."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "witr_prayer",
+      "title": "Witr Prayer",
+      "shortTitle": "Witr",
+      "category": "Night worship",
+      "summary": "The schools agree Witr should be maintained, but they differ on whether it is obligatory, wajib, or a strongly emphasized sunnah.",
+      "checklistLabel": "Review tonight's Witr",
+      "frequencyLabel": "Nightly",
+      "showInChecklist": true,
+      "showInDisputed": true,
+      "scholarEscalation": "If you regularly miss Witr, are making up missed prayers, or need to combine a late schedule with tahajjud and night prayer, ask a qualified scholar for a practical routine.",
+      "sortOrder": 40,
+      "rulings": [
+        {
+          "schoolProfiles": ["hanafi"],
+          "classification": "necessary",
+          "summary": "Witr is wajib after Isha and should not be treated as optional in normal circumstances.",
+          "notes": "Hanafi fiqh distinguishes Witr from the five fard prayers, while still treating it as a binding duty that should be made up if missed.",
+          "contextChanges": "Travel, exhaustion, and missed Isha affect timing, but not the baseline duty in the school.",
+          "evidence": [
+            {
+              "type": "hadith",
+              "citation": "Abu Dawud 1418; Tirmidhi 425",
+              "title": "Reports used by jurists regarding the consistent maintenance of Witr."
+            },
+            {
+              "type": "scholarly_link",
+              "citation": "SeekersGuidance (Hanafi)",
+              "title": "How Important Is Witr in the Hanafi School?",
+              "url": "https://seekersguidance.org/answers/general-counsel/how-important-is-witr-in-the-hanafi-school/"
+            }
+          ]
+        },
+        {
+          "schoolProfiles": ["maliki", "shafii", "hanbali"],
+          "classification": "emphasized_recommended",
+          "summary": "Witr is a highly emphasized sunnah and among the most important regular voluntary prayers, but it is not treated as obligatory by the majority.",
+          "notes": "These schools strongly encourage consistent observance and may describe Witr as among the confirmed sunnahs.",
+          "contextChanges": "Sleep plans, travel, and whether you expect to wake later in the night can change when you pray it, not the baseline recommendation.",
+          "evidence": [
+            {
+              "type": "hadith",
+              "citation": "Sahih Muslim, Book of Travelers' Prayer",
+              "title": "Reports describing Witr as distinct from the prescribed obligatory prayers."
+            },
+            {
+              "type": "scholarly_link",
+              "citation": "Islamweb / majority of scholars",
+              "title": "Majority view on Witr as a confirmed sunnah rather than an obligation",
+              "url": "https://islamweb.net/en/fatwa/123059/witr-prayer-is-a-confirmed-sunnah"
+            }
+          ]
+        },
+        {
+          "schoolProfiles": ["jafari"],
+          "classification": "recommended",
+          "summary": "Witr is part of Salat al-Layl and is strongly recommended, but not obligatory.",
+          "notes": "Ja'fari fiqh treats Witr within the broader night prayer structure rather than as a standalone wajib prayer.",
+          "contextChanges": "Its timing and performance depend on whether the person is offering the full night prayer routine or only the Witr portion.",
+          "evidence": [
+            {
+              "type": "scholarly_link",
+              "citation": "Sistani, Islamic Laws",
+              "title": "Rules on the supererogatory prayers, including Salat al-Layl and Witr",
+              "url": "https://www.sistani.org/english/book/48/2213/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shellfish_and_non_fish_sea_animals",
+      "title": "Shellfish and Non-Fish Sea Animals",
+      "shortTitle": "Seafood differences",
+      "category": "Disputed issues",
+      "summary": "Schools differ on shellfish and other non-fish sea animals. This is a classic area where users should compare sources and follow their school or scholar.",
+      "checklistLabel": "Review seafood guidance for your school",
+      "frequencyLabel": "As needed",
+      "showInChecklist": false,
+      "showInDisputed": true,
+      "scholarEscalation": "If you are switching schools, following a local mosque, or dealing with mixed ingredients and restaurant uncertainty, ask a qualified scholar for guidance tied to your practice.",
+      "sortOrder": 50,
+      "rulings": [
+        {
+          "schoolProfiles": ["hanafi"],
+          "classification": "disputed",
+          "summary": "Fish are permitted, while shellfish and most non-fish sea animals are generally not permitted; shrimp or prawns are treated separately by some later Hanafi discussions.",
+          "notes": "This topic bundles several creatures together, so a simple yes or no answer can be misleading. Fish are the clear baseline permissibility in the school.",
+          "contextChanges": "Whether a creature counts as fish, and how shrimp or prawns are classified, changes the result.",
+          "evidence": [
+            {
+              "type": "quran",
+              "citation": "Qur'an 5:96",
+              "title": "Lawful to you is the game of the sea and its food."
+            },
+            {
+              "type": "hadith",
+              "citation": "Abu Dawud 83; Tirmidhi 69",
+              "title": "The sea's water is pure and its dead are lawful."
+            },
+            {
+              "type": "scholarly_link",
+              "citation": "SeekersGuidance (Hanafi)",
+              "title": "Is Seafood Halal in the Hanafi School?",
+              "url": "https://seekersguidance.org/answers/hanafi-fiqh/seafood-halal-hanafi-school/"
+            }
+          ]
+        },
+        {
+          "schoolProfiles": ["maliki", "shafii", "hanbali"],
+          "classification": "permissible",
+          "summary": "Sea animals, including shellfish, are generally treated as permissible in the majority schools represented here.",
+          "notes": "Individual edge cases still appear in detailed manuals, but the broad rule is much wider than the Hanafi and Ja'fari positions.",
+          "contextChanges": "Preparation method, cross-contamination, and whether a product is actually marine can still matter.",
+          "evidence": [
+            {
+              "type": "quran",
+              "citation": "Qur'an 5:96",
+              "title": "Lawful to you is the game of the sea and its food."
+            },
+            {
+              "type": "hadith",
+              "citation": "Abu Dawud 83; Tirmidhi 69",
+              "title": "The sea's water is pure and its dead are lawful."
+            },
+            {
+              "type": "scholarly_link",
+              "citation": "SeekersGuidance / four schools overview",
+              "title": "What Seafood Is Permissible? The Four Schools",
+              "url": "https://seekersguidance.org/answers/general-counsel/what-seafood-is-permissible-the-four-schools/"
+            }
+          ]
+        },
+        {
+          "schoolProfiles": ["jafari"],
+          "classification": "disputed",
+          "summary": "Fish with scales are permitted and shrimp is permitted, while shellfish and other non-scale sea animals are generally not permitted.",
+          "notes": "Because the topic mixes fish, shrimp, and shellfish together, users should read the narrower rule rather than assuming all seafood is handled the same way.",
+          "contextChanges": "Whether the animal is a scaled fish, shrimp, or another marine creature changes the result.",
+          "evidence": [
+            {
+              "type": "scholarly_link",
+              "citation": "Sistani Q&A",
+              "title": "Are Muslims allowed to eat shrimp? Other sea animals?",
+              "url": "https://www.sistani.org/english/qa/01129/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+name: ummah_app_workspace
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dev_dependencies:
+  melos: ^6.3.2
+  lints: ^5.1.1

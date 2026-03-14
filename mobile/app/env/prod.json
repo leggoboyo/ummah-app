@@ -1,0 +1,8 @@
+{
+  "appFlavor": "prod",
+  "hostedAiEnabled": false,
+  "entitlementProvider": "revenuecat",
+  "apiBaseUrl": "",
+  "revenueCatAndroidPublicSdkKey": "goog_WpPjCWuUjDBNYbEVuAWFQUsmlVQ",
+  "revenueCatIosPublicSdkKey": ""
+}

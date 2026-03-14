@@ -1,0 +1,20 @@
+# melos_managed_dependency_overrides: ai_assistant,core,fiqh,hadith,prayer,qibla,quran,subscriptions,scholar_feed
+dependency_overrides:
+  ai_assistant:
+    path: ../../features/ai_assistant
+  core:
+    path: ../../packages/core
+  fiqh:
+    path: ../../features/fiqh
+  hadith:
+    path: ../../features/hadith
+  prayer:
+    path: ../../features/prayer
+  qibla:
+    path: ../../features/qibla
+  quran:
+    path: ../../features/quran
+  scholar_feed:
+    path: ../../features/scholar_feed
+  subscriptions:
+    path: ../../features/subscriptions

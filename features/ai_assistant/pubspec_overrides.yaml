@@ -1,0 +1,8 @@
+# melos_managed_dependency_overrides: core,hadith,quran
+dependency_overrides:
+  core:
+    path: ../../packages/core
+  hadith:
+    path: ../hadith
+  quran:
+    path: ../quran

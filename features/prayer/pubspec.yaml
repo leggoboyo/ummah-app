@@ -1,0 +1,15 @@
+name: prayer
+description: Prayer times, fiqh profiles, and notification scheduling domain logic.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  core:
+    path: ../../packages/core
+
+dev_dependencies:
+  lints: ^5.1.1
+  test: ^1.25.8

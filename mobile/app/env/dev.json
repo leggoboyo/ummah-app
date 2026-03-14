@@ -1,0 +1,8 @@
+{
+  "appFlavor": "dev",
+  "hostedAiEnabled": false,
+  "entitlementProvider": "preview",
+  "apiBaseUrl": "",
+  "revenueCatAndroidPublicSdkKey": "",
+  "revenueCatIosPublicSdkKey": ""
+}

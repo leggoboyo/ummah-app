@@ -1,0 +1,24 @@
+name: ai_assistant
+description: Placeholder package for the BYOK-first Islamic RAG assistant.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../../packages/core
+  quran:
+    path: ../../features/quran
+  hadith:
+    path: ../../features/hadith
+  http: ^1.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^5.1.1
+  test: ^1.25.8

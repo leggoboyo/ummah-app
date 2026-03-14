@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/features/ai_assistant/melos_ai_assistant.iml" filepath="$PROJECT_DIR$/features/ai_assistant/melos_ai_assistant.iml" />
+      <module fileurl="file://$PROJECT_DIR$/packages/core/melos_core.iml" filepath="$PROJECT_DIR$/packages/core/melos_core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/features/fiqh/melos_fiqh.iml" filepath="$PROJECT_DIR$/features/fiqh/melos_fiqh.iml" />
+      <module fileurl="file://$PROJECT_DIR$/features/hadith/melos_hadith.iml" filepath="$PROJECT_DIR$/features/hadith/melos_hadith.iml" />
+      <module fileurl="file://$PROJECT_DIR$/features/prayer/melos_prayer.iml" filepath="$PROJECT_DIR$/features/prayer/melos_prayer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/features/qibla/melos_qibla.iml" filepath="$PROJECT_DIR$/features/qibla/melos_qibla.iml" />
+      <module fileurl="file://$PROJECT_DIR$/features/quran/melos_quran.iml" filepath="$PROJECT_DIR$/features/quran/melos_quran.iml" />
+      <module fileurl="file://$PROJECT_DIR$/features/scholar_feed/melos_scholar_feed.iml" filepath="$PROJECT_DIR$/features/scholar_feed/melos_scholar_feed.iml" />
+      <module fileurl="file://$PROJECT_DIR$/features/subscriptions/melos_subscriptions.iml" filepath="$PROJECT_DIR$/features/subscriptions/melos_subscriptions.iml" />
+      <module fileurl="file://$PROJECT_DIR$/mobile/app/melos_ummah_mobile_app.iml" filepath="$PROJECT_DIR$/mobile/app/melos_ummah_mobile_app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/melos_ummah_app.iml" filepath="$PROJECT_DIR$/melos_ummah_app.iml" />
+    </modules>
+  </component>
+</project>

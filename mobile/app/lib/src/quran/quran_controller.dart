@@ -131,10 +131,10 @@ class QuranController extends ChangeNotifier {
         );
       }
 
-      final bool shouldAutoDownloadPreferredTranslation =
-          startupSelection?.selectedPackIds
-                  .contains(AppContentPackIds.quranTranslationDefault) ??
-              startupMode != QuranStartupMode.arabicOnly;
+      final bool shouldAutoDownloadPreferredTranslation = startupSelection
+              ?.selectedPackIds
+              .contains(AppContentPackIds.quranTranslationDefault) ??
+          startupMode != QuranStartupMode.arabicOnly;
 
       if (_preferredLanguageCode == 'ar' ||
           !shouldAutoDownloadPreferredTranslation) {
@@ -325,7 +325,8 @@ class QuranController extends ChangeNotifier {
     try {
       await operation();
     } on SocketException {
-      errorMessage = 'Connect to the internet to finish downloading Quran translations.';
+      errorMessage =
+          'Connect to the internet to finish downloading Quran translations.';
     } catch (error) {
       errorMessage = _friendlyErrorMessage(error);
     } finally {
@@ -410,7 +411,8 @@ class QuranController extends ChangeNotifier {
       final QuranSyncOutcome outcome = await _repository.syncEntireTranslation(
         translationKey: translationKey,
         onProgress: (int completedSurahs, int totalSurahs) {
-          if (!userVisibleProgress && completedSurahs - lastProgressNotice < 20) {
+          if (!userVisibleProgress &&
+              completedSurahs - lastProgressNotice < 20) {
             return;
           }
           if (completedSurahs == totalSurahs || completedSurahs == 1) {
@@ -425,9 +427,8 @@ class QuranController extends ChangeNotifier {
               'Downloading $translationTitle... $completedSurahs/$totalSurahs surahs';
           notifyListeners();
         },
-        shouldCancel: allowCancellation
-            ? () => _cancelStartupDownloadRequested
-            : null,
+        shouldCancel:
+            allowCancellation ? () => _cancelStartupDownloadRequested : null,
       );
       await _refreshLocalState();
       await _reloadVisibleContent();
@@ -496,10 +497,9 @@ class QuranController extends ChangeNotifier {
       return null;
     }
 
-    final bool shouldAutoSelectTranslation =
-        startupSelection?.selectedPackIds
-                .contains(AppContentPackIds.quranTranslationDefault) ??
-            startupMode != QuranStartupMode.arabicOnly;
+    final bool shouldAutoSelectTranslation = startupSelection?.selectedPackIds
+            .contains(AppContentPackIds.quranTranslationDefault) ??
+        startupMode != QuranStartupMode.arabicOnly;
 
     for (final QuranTranslationInfo translation in translations) {
       if (translation.key == existingKey) {

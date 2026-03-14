@@ -112,7 +112,9 @@ void main() {
       expect(_clock(result.timeFor(PrayerName.maghrib)), '22:53');
       expect(_clock(result.timeFor(PrayerName.isha)), '01:25');
       expect(
-        result.timeFor(PrayerName.sunrise).isAfter(result.timeFor(PrayerName.fajr)),
+        result
+            .timeFor(PrayerName.sunrise)
+            .isAfter(result.timeFor(PrayerName.fajr)),
         isTrue,
       );
     });

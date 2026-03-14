@@ -121,8 +121,8 @@ class WorldTimeZonePicker extends StatelessWidget {
 
   int _selectedBandIndex() {
     final int index = bands.indexWhere(
-      (WorldTimeZoneBand band) =>
-          band.presets.any((ManualLocationPreset preset) => preset.id == selectedPreset.id),
+      (WorldTimeZoneBand band) => band.presets
+          .any((ManualLocationPreset preset) => preset.id == selectedPreset.id),
     );
     return index == -1 ? 0 : index;
   }

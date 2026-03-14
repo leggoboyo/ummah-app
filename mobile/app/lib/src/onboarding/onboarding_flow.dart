@@ -120,8 +120,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 
   void _toggleCustomPack(ContentPackManifest manifest, bool selected) {
-    final Set<String> selectedPackIds = _startupSelection.selectedPackIds.toSet();
-    final Set<String> deferredPackIds = _startupSelection.deferredPackIds.toSet();
+    final Set<String> selectedPackIds =
+        _startupSelection.selectedPackIds.toSet();
+    final Set<String> deferredPackIds =
+        _startupSelection.deferredPackIds.toSet();
 
     if (manifest.isBundled) {
       selectedPackIds.add(manifest.id);
@@ -438,8 +440,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                       children: <Widget>[
                         _OptionChip(
                           label: strings.manualLocationSegmentLabel,
-                          selected:
-                              _locationSelectionMode == _LocationSelectionMode.city,
+                          selected: _locationSelectionMode ==
+                              _LocationSelectionMode.city,
                           onSelected: () {
                             setState(() {
                               _locationSelectionMode =
@@ -462,8 +464,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                         ),
                         _OptionChip(
                           label: 'Location',
-                          selected:
-                              _locationSelectionMode == _LocationSelectionMode.device,
+                          selected: _locationSelectionMode ==
+                              _LocationSelectionMode.device,
                           onSelected: () {
                             setState(() {
                               _locationSelectionMode =
@@ -724,7 +726,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           (double offsetHours) => WorldTimeZoneBand(
             utcOffsetHours: offsetHours,
             label: _utcLabel(offsetHours),
-            presets: grouped[offsetHours]!..sort(
+            presets: grouped[offsetHours]!
+              ..sort(
                 (ManualLocationPreset a, ManualLocationPreset b) =>
                     a.city.compareTo(b.city),
               ),
@@ -1163,7 +1166,8 @@ class _PresetSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Map<String, ContentPackManifest> byId = <String, ContentPackManifest>{
-      for (final ContentPackManifest manifest in manifests) manifest.id: manifest,
+      for (final ContentPackManifest manifest in manifests)
+        manifest.id: manifest,
     };
     final List<ContentPackManifest> selected = selection.selectedPackIds
         .map((String id) => byId[id])

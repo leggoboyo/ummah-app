@@ -19,7 +19,8 @@ class PrayerTimeCalculator {
   }) {
     final DateTime localDate = DateTime(date.year, date.month, date.day);
     final double timeZoneHours = settings.timeZoneOffset.inMinutes / 60.0;
-    final double julianDay = _julianDate(localDate) - coordinates.longitude / 360.0;
+    final double julianDay =
+        _julianDate(localDate) - coordinates.longitude / 360.0;
 
     final Map<PrayerName, double> times = <PrayerName, double>{
       PrayerName.fajr: 5,
@@ -124,8 +125,10 @@ class PrayerTimeCalculator {
     final Map<PrayerName, double> adjusted = <PrayerName, double>{
       PrayerName.fajr: fajr + timeZoneHours - longitude / 15.0,
       PrayerName.sunrise: sunrise + timeZoneHours - longitude / 15.0,
-      PrayerName.dhuhr:
-          dhuhr + timeZoneHours - longitude / 15.0 + settings.dhuhrOffsetMinutes / 60.0,
+      PrayerName.dhuhr: dhuhr +
+          timeZoneHours -
+          longitude / 15.0 +
+          settings.dhuhrOffsetMinutes / 60.0,
       PrayerName.asr: asr + timeZoneHours - longitude / 15.0,
       PrayerName.maghrib: maghrib + timeZoneHours - longitude / 15.0,
       PrayerName.isha: isha + timeZoneHours - longitude / 15.0,
@@ -175,7 +178,8 @@ class PrayerTimeCalculator {
         settings.maghribRule.angle!,
         night,
       );
-      final double maghribGap = _timeDiff(sunsetTime, times[PrayerName.maghrib]!);
+      final double maghribGap =
+          _timeDiff(sunsetTime, times[PrayerName.maghrib]!);
       if (times[PrayerName.maghrib]!.isNaN ||
           (!maghribGap.isNaN && maghribGap > maghribPortion)) {
         times[PrayerName.maghrib] = sunsetTime + maghribPortion;
@@ -207,10 +211,9 @@ class PrayerTimeCalculator {
     final SolarPosition position = _solarPosition(julianDay + time);
     final double declination = position.declination;
     final double noon = _midDay(julianDay, time);
-    final double numerator = -_sinDeg(angle) -
-        _sinDeg(declination) * _sinDeg(latitude);
-    final double denominator =
-        _cosDeg(declination) * _cosDeg(latitude);
+    final double numerator =
+        -_sinDeg(angle) - _sinDeg(declination) * _sinDeg(latitude);
+    final double denominator = _cosDeg(declination) * _cosDeg(latitude);
     final double arccosInput = numerator / denominator;
     if (arccosInput.isNaN || arccosInput < -1.0 || arccosInput > 1.0) {
       return double.nan;
@@ -281,7 +284,8 @@ class PrayerTimeCalculator {
     final double l = _fixAngle(q + 1.915 * _sinDeg(g) + 0.020 * _sinDeg(2 * g));
 
     final double e = 23.439 - 0.00000036 * d;
-    final double rightAscension = _atan2Deg(_cosDeg(e) * _sinDeg(l), _cosDeg(l)) / 15.0;
+    final double rightAscension =
+        _atan2Deg(_cosDeg(e) * _sinDeg(l), _cosDeg(l)) / 15.0;
     final double equationOfTime = q / 15.0 - _fixHour(rightAscension);
     final double declination = _asinDeg(_sinDeg(e) * _sinDeg(l));
 

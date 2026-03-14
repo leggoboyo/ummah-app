@@ -282,7 +282,8 @@ class _TranslationCard extends StatelessWidget {
                 FilledButton.tonal(
                   onPressed: controller.isWorking ||
                           controller.selectedTranslation == null ||
-                          !(controller.selectedTranslation?.isDownloaded ?? false)
+                          !(controller.selectedTranslation?.isDownloaded ??
+                              false)
                       ? null
                       : () => controller.removeSelectedTranslation(),
                   child: const Text('Remove from device'),

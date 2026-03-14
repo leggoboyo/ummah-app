@@ -11,7 +11,8 @@ void main() {
           const PrayerNotificationPreferences(
         iosRollingWindowDays: 30,
       );
-      final List<PrayerNotificationEvent> events = List<PrayerNotificationEvent>.generate(
+      final List<PrayerNotificationEvent> events =
+          List<PrayerNotificationEvent>.generate(
         80,
         (int index) => PrayerNotificationEvent(
           id: 'event-$index',
@@ -38,7 +39,8 @@ void main() {
           const PrayerNotificationPreferences(
         iosRollingWindowDays: 8,
       );
-      final List<PrayerNotificationEvent> events = List<PrayerNotificationEvent>.generate(
+      final List<PrayerNotificationEvent> events =
+          List<PrayerNotificationEvent>.generate(
         40,
         (int index) => PrayerNotificationEvent(
           id: 'event-$index',

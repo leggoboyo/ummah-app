@@ -119,7 +119,8 @@ class _DeferredPackCard extends StatelessWidget {
                 'These packs were selected during setup but deferred until a paid unlock becomes available.',
               ),
               const SizedBox(height: 12),
-              for (final String packId in controller.startupSelection.deferredPackIds)
+              for (final String packId
+                  in controller.startupSelection.deferredPackIds)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text('• ${_packTitleForId(packId)}'),

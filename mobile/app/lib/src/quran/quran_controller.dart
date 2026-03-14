@@ -5,15 +5,18 @@ import 'package:flutter/foundation.dart';
 import 'package:quran/quran.dart';
 
 import '../bootstrap/app_profile.dart';
+import '../content_packs/content_pack_registry.dart';
 
 class QuranController extends ChangeNotifier {
   QuranController({
     QuranRepository? repository,
     this.startupMode = QuranStartupMode.fullTranslation,
+    this.startupSelection,
   }) : _repository = repository ?? QuranRepository();
 
   final QuranRepository _repository;
   final QuranStartupMode startupMode;
+  final StartupSelection? startupSelection;
 
   bool isReady = false;
   bool isWorking = false;
@@ -128,8 +131,13 @@ class QuranController extends ChangeNotifier {
         );
       }
 
+      final bool shouldAutoDownloadPreferredTranslation =
+          startupSelection?.selectedPackIds
+                  .contains(AppContentPackIds.quranTranslationDefault) ??
+              startupMode != QuranStartupMode.arabicOnly;
+
       if (_preferredLanguageCode == 'ar' ||
-          startupMode == QuranStartupMode.arabicOnly) {
+          !shouldAutoDownloadPreferredTranslation) {
         statusMessage ??= 'Arabic text is ready offline on this device.';
         return;
       }
@@ -240,6 +248,23 @@ class QuranController extends ChangeNotifier {
         userVisibleProgress: true,
         allowCancellation: false,
       );
+    });
+  }
+
+  Future<void> removeSelectedTranslation() async {
+    final String? translationKey = _selectedTranslationKey;
+    if (translationKey == null || translationKey.isEmpty) {
+      errorMessage = 'Select a translation first, then remove it.';
+      notifyListeners();
+      return;
+    }
+
+    await _runBusy(() async {
+      final String title = selectedTranslation?.title ?? 'translation';
+      await _repository.removeTranslation(translationKey: translationKey);
+      await _refreshLocalState();
+      await _reloadVisibleContent();
+      statusMessage = 'Removed $title from offline storage.';
     });
   }
 
@@ -471,6 +496,11 @@ class QuranController extends ChangeNotifier {
       return null;
     }
 
+    final bool shouldAutoSelectTranslation =
+        startupSelection?.selectedPackIds
+                .contains(AppContentPackIds.quranTranslationDefault) ??
+            startupMode != QuranStartupMode.arabicOnly;
+
     for (final QuranTranslationInfo translation in translations) {
       if (translation.key == existingKey) {
         return existingKey;
@@ -487,6 +517,10 @@ class QuranController extends ChangeNotifier {
       if (translation.isDownloaded) {
         return translation.key;
       }
+    }
+
+    if (!shouldAutoSelectTranslation) {
+      return null;
     }
 
     return translations.first.key;

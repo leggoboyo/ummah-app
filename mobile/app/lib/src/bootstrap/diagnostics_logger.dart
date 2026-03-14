@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:core/core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'diagnostics_redactor.dart';
+
 abstract interface class DiagnosticsLogger implements AppLogger {
   Future<void> clear();
 }
@@ -53,10 +55,10 @@ class PersistentDiagnosticsLogger implements DiagnosticsLogger {
     final List<AppLogEntry> current = await entries();
     final AppLogEntry nextEntry = AppLogEntry(
       level: level,
-      message: message,
+      message: DiagnosticsRedactor.redactText(message),
       timestamp: _clock(),
-      error: error,
-      stackTrace: stackTrace,
+      error: DiagnosticsRedactor.redactError(error),
+      stackTrace: DiagnosticsRedactor.redactStackTrace(stackTrace),
     );
     final List<Map<String, Object?>> encoded = <AppLogEntry>[
       ...current,
@@ -126,10 +128,10 @@ class InMemoryDiagnosticsLogger implements DiagnosticsLogger {
     _entries.add(
       AppLogEntry(
         level: level,
-        message: message,
+        message: DiagnosticsRedactor.redactText(message),
         timestamp: _clock(),
-        error: error,
-        stackTrace: stackTrace,
+        error: DiagnosticsRedactor.redactError(error),
+        stackTrace: DiagnosticsRedactor.redactStackTrace(stackTrace),
       ),
     );
   }

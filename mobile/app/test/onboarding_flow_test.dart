@@ -5,6 +5,7 @@ import 'package:prayer/prayer.dart';
 import 'package:subscriptions/subscriptions.dart';
 import 'package:ummah_mobile_app/src/app/ummah_app.dart';
 import 'package:ummah_mobile_app/src/bootstrap/app_controller.dart';
+import 'package:ummah_mobile_app/src/bootstrap/app_identity_store.dart';
 import 'package:ummah_mobile_app/src/bootstrap/app_profile_store.dart';
 import 'package:ummah_mobile_app/src/bootstrap/device_location_service.dart';
 import 'package:ummah_mobile_app/src/bootstrap/local_notifications_service.dart';
@@ -38,6 +39,7 @@ void main() {
       subscriptionRepository: SubscriptionRepository(
         provider: RevenueCatSubscriptionProvider(),
       ),
+      identityStore: _TestAppIdentityStore(),
     );
 
     await controller.initialize();
@@ -45,7 +47,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Welcome to Ummah App'), findsOneWidget);
-
     await tester.scrollUntilVisible(
       find.widgetWithText(FilledButton, 'Continue'),
       300,
@@ -59,4 +60,16 @@ void main() {
     expect(find.text('Notification health'), findsOneWidget);
     expect(find.text('Prayer'), findsOneWidget);
   });
+}
+
+class _TestAppIdentityStore implements AppIdentityStore {
+  String? _appUserId;
+
+  @override
+  Future<String> ensureRevenueCatAppUserId() async {
+    return _appUserId ??= 'ummah_test_onboarding';
+  }
+
+  @override
+  Future<String?> readRevenueCatAppUserId() async => _appUserId;
 }

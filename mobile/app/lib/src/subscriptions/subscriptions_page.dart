@@ -36,6 +36,8 @@ class PlansAndUnlocksScreen extends StatelessWidget {
                   recommendedProduct: recommendedProduct,
                   controller: controller,
                 ),
+              if (controller.startupSelection.deferredPackIds.isNotEmpty)
+                _DeferredPackCard(controller: controller),
               const _CoreFreeCard(),
               const SizedBox(height: 12),
               _BillingStateCard(controller: controller),
@@ -81,9 +83,49 @@ class _CoreFreeCard extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              'Prayer times, local adhan notifications, minimal qibla, Hijri date, and the base Quran reader stay free and ad-free.',
+              'Prayer times, local adhan notifications, qibla, Hijri date, Quran Arabic, one recommended Quran translation, and one recommended Sunni Hadith pack stay free and ad-free.',
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DeferredPackCard extends StatelessWidget {
+  const _DeferredPackCard({
+    required this.controller,
+  });
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Saved for later',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'These packs were selected during setup but deferred until a paid unlock becomes available.',
+              ),
+              const SizedBox(height: 12),
+              for (final String packId in controller.startupSelection.deferredPackIds)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text('• ${_packTitleForId(packId)}'),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -267,6 +309,11 @@ class _ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(product.description),
+            const SizedBox(height: 8),
+            Text(
+              _moduleUnlockSummary(product),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 12),
             Row(
               children: <Widget>[
@@ -305,6 +352,38 @@ class _ProductCard extends StatelessWidget {
         content: Text(result.message),
       ),
     );
+  }
+}
+
+String _moduleUnlockSummary(SubscriptionProduct product) {
+  switch (product.primaryEntitlement) {
+    case AppEntitlement.quranPlus:
+      return 'Unlocks optional Quran audio packs and future premium Quran study content.';
+    case AppEntitlement.hadithPlus:
+      return 'Unlocks extra Sunni Hadith language packs and future advanced Hadith study tools.';
+    case AppEntitlement.aiQuran:
+      return 'Unlocks Ask Quran AI. Base Quran reading stays free.';
+    case AppEntitlement.aiHadith:
+      return 'Unlocks Ask Hadith AI and includes Hadith Plus.';
+    case AppEntitlement.scholarFeed:
+      return 'Unlocks the scholar/article feed and its local cache controls.';
+    case AppEntitlement.megaBundle:
+      return 'Unlocks every paid pack and module in one subscription.';
+    case AppEntitlement.coreFree:
+      return 'Prayer, Quran Arabic, recommended reading packs, and setup tools stay free.';
+  }
+}
+
+String _packTitleForId(String packId) {
+  switch (packId) {
+    case 'quran_audio:starter':
+      return 'Audio starter pack';
+    case 'quran_translation:default':
+      return 'Phone-language Quran translation';
+    case 'hadith_pack:default':
+      return 'Recommended Sunni Hadith pack';
+    default:
+      return packId;
   }
 }
 

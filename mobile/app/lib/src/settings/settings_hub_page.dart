@@ -37,7 +37,7 @@ class SettingsHubScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Build ${appController.environment.buildLabel}. Analytics are ${appController.analyticsEnabled ? 'on' : 'off'}, billing is ${appController.billingAvailability.label.toLowerCase()}, and notification health is ${appController.notificationHealth?.status.name ?? 'unknown'}.',
+                        'Build ${appController.environment.buildLabel}. Billing is ${appController.billingAvailability.label.toLowerCase()}, notifications are ${appController.notificationHealth?.status.name ?? 'unknown'}, and analytics stay disabled in this build.',
                       ),
                     ],
                   ),
@@ -48,7 +48,7 @@ class SettingsHubScreen extends StatelessWidget {
                 icon: Icons.privacy_tip_outlined,
                 title: 'Data & Privacy',
                 subtitle:
-                    'See what stays on your device, what ever leaves it, and keep analytics opt-in off by default.',
+                    'See what stays on your device, what ever leaves it, and review the offline-first privacy posture.',
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -64,7 +64,7 @@ class SettingsHubScreen extends StatelessWidget {
                 icon: Icons.verified_outlined,
                 title: 'Sources & Versions',
                 subtitle:
-                    'Review Quran, hadith, fiqh, and scholar-feed source metadata, attributions, and last sync state.',
+                    'Review installed packs, Quran/hadith source metadata, attributions, and last sync state.',
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(

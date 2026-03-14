@@ -8,8 +8,42 @@ on:
   pull_request:
 
 jobs:
+  format-and-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Bootstrap workspace
+        run: |
+          dart pub get
+          dart run melos bootstrap
+
+      - name: Enforce formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Install Worker dependencies
+        working-directory: services/content-pack-worker
+        run: npm ci
+
+      - name: Run Worker tests
+        working-directory: services/content-pack-worker
+        run: node --test
+
+      - name: Audit Worker dependencies
+        working-directory: services/content-pack-worker
+        run: npm audit --omit=dev --audit-level=high
+
   analyze-and-test:
     runs-on: macos-latest
+    needs: format-and-worker
     steps:
       - uses: actions/checkout@v4
 

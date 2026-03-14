@@ -86,7 +86,9 @@ class QuranEncRemoteDataSource implements QuranTranslationRemoteDataSource {
     final List<dynamic> rawResult =
         payload['result'] as List<dynamic>? ?? <dynamic>[];
 
-    return rawResult.cast<Map<String, dynamic>>().map((Map<String, dynamic> row) {
+    return rawResult
+        .cast<Map<String, dynamic>>()
+        .map((Map<String, dynamic> row) {
       return QuranTranslationVerse(
         surahNumber: int.parse(row['sura'] as String),
         ayahNumber: int.parse(row['aya'] as String),

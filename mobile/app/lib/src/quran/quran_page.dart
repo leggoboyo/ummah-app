@@ -279,6 +279,14 @@ class _TranslationCard extends StatelessWidget {
                       : () => controller.downloadFullTranslation(),
                   child: const Text('Download full translation'),
                 ),
+                FilledButton.tonal(
+                  onPressed: controller.isWorking ||
+                          controller.selectedTranslation == null ||
+                          !(controller.selectedTranslation?.isDownloaded ?? false)
+                      ? null
+                      : () => controller.removeSelectedTranslation(),
+                  child: const Text('Remove from device'),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -291,8 +299,8 @@ class _TranslationCard extends StatelessWidget {
                 padding: const EdgeInsets.all(14),
                 child: Text(
                   selectedTranslation == null
-                      ? 'Arabic is bundled offline. Your phone-language translation will download automatically the first time you open Quran, and you can add more languages later.'
-                      : '${selectedTranslation.title}\nVersion ${selectedTranslation.version}\n${selectedTranslation.attribution}',
+                      ? 'Arabic is bundled offline. Add a translation only when you want offline translated search and reading.'
+                      : '${selectedTranslation.title}\nVersion ${selectedTranslation.version}\n${selectedTranslation.attribution}\nStored on this device: ${selectedTranslation.isFullyDownloaded ? 'full pack' : selectedTranslation.isDownloaded ? 'partial pack' : 'not downloaded yet'}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),

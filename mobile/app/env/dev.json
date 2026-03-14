@@ -2,7 +2,7 @@
   "appFlavor": "dev",
   "hostedAiEnabled": false,
   "entitlementProvider": "preview",
-  "apiBaseUrl": "",
+  "apiBaseUrl": "https://ummah-content-pack-worker.zkhawaja721.workers.dev",
   "revenueCatAndroidPublicSdkKey": "",
   "revenueCatIosPublicSdkKey": ""
 }

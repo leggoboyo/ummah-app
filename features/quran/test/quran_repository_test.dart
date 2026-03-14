@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:core/core.dart';
 import 'package:quran/quran.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
@@ -32,7 +33,8 @@ void main() {
     expect(sourceVersion?.version, '1.1');
   });
 
-  test('search returns Arabic and translation matches from SQLite FTS', () async {
+  test('search returns Arabic and translation matches from SQLite FTS',
+      () async {
     await repository.refreshTranslationCatalog(languageCode: 'en');
     await repository.syncTranslationSurahs(
       translationKey: 'english_test',
@@ -94,6 +96,25 @@ void main() {
     final List<QuranTranslationInfo> afterFullSync =
         await repository.getLocalTranslations(languageCode: 'en');
     expect(afterFullSync.single.isFullyDownloaded, isTrue);
+  });
+
+  test('removes a downloaded translation cleanly', () async {
+    await repository.refreshTranslationCatalog(languageCode: 'en');
+    await repository.syncEntireTranslation(translationKey: 'english_test');
+
+    await repository.removeTranslation(translationKey: 'english_test');
+
+    final List<QuranTranslationInfo> translations =
+        await repository.getLocalTranslations(languageCode: 'en');
+    final SourceVersion? sourceVersion =
+        await repository.getTranslationSourceVersion(
+      'english_test',
+      languageCode: 'en',
+    );
+
+    expect(translations.single.isDownloaded, isFalse);
+    expect(translations.single.cachedAyahCount, 0);
+    expect(sourceVersion, isNull);
   });
 
   test('can cancel full translation sync between surahs', () async {

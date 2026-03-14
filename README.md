@@ -17,10 +17,11 @@ The repository now contains:
 - `features/prayer`: prayer domain models, fiqh profiles, local calculation engine, and notification planning
 - `features/qibla`: qibla bearing math and presentation-friendly models
 - `features/quran`: placeholder package for Milestone 2
-- `features/hadith`: placeholder package for Milestone 3
+- `features/hadith`: Sunni Hadith finder, offline SQLite/FTS search, and remote content-pack ingestion
 - `features/fiqh`: placeholder package for Milestone 4
 - `features/ai_assistant`: placeholder package for Milestone 6
 - `features/subscriptions`: placeholder package for Milestone 5
+- `services/content-pack-worker`: Cloudflare Worker for remote content-pack manifests and signed downloads
 
 ## Tooling Status
 

@@ -6,6 +6,7 @@ import 'package:quran/quran.dart';
 import 'package:scholar_feed/scholar_feed.dart';
 
 import '../bootstrap/shared_preferences_key_value_store.dart';
+import '../content_packs/content_pack_registry.dart';
 
 class SettingsController extends ChangeNotifier {
   SettingsController({
@@ -13,18 +14,23 @@ class SettingsController extends ChangeNotifier {
     HadithRepository? hadithRepository,
     FiqhRepository? fiqhRepository,
     ScholarFeedRepository? scholarFeedRepository,
+    ContentPackRegistry? contentPackRegistry,
+    this.preferredLanguageCode = 'en',
   })  : _quranRepository = quranRepository ?? QuranRepository(),
         _hadithRepository = hadithRepository ?? HadithRepository(),
         _fiqhRepository = fiqhRepository ?? FiqhRepository(),
         _scholarFeedRepository = scholarFeedRepository ??
             ScholarFeedRepository(
               keyValueStore: SharedPreferencesKeyValueStore(),
-            );
+            ),
+        _contentPackRegistry = contentPackRegistry ?? ContentPackRegistry();
 
   final QuranRepository _quranRepository;
   final HadithRepository _hadithRepository;
   final FiqhRepository _fiqhRepository;
   final ScholarFeedRepository _scholarFeedRepository;
+  final ContentPackRegistry _contentPackRegistry;
+  final String preferredLanguageCode;
 
   bool isReady = false;
   bool isWorking = false;
@@ -33,6 +39,8 @@ class SettingsController extends ChangeNotifier {
   List<SourceVersion> quranSourceVersions = const <SourceVersion>[];
   List<SourceVersion> hadithSourceVersions = const <SourceVersion>[];
   List<SourceVersion> fiqhSourceVersions = const <SourceVersion>[];
+  List<InstalledContentPack> installedContentPacks =
+      const <InstalledContentPack>[];
   List<ScholarFeedSource> scholarFeedSources = const <ScholarFeedSource>[];
   Set<String> followedScholarFeedSources = <String>{};
   DateTime? scholarFeedLastSyncedAt;
@@ -56,10 +64,14 @@ class SettingsController extends ChangeNotifier {
       await _quranRepository.initialize();
       await _hadithRepository.initialize();
       await _fiqhRepository.initialize();
+      await _contentPackRegistry.initialize();
 
       quranSourceVersions = await _quranRepository.getSourceVersions();
       hadithSourceVersions = await _hadithRepository.getSourceVersions();
       fiqhSourceVersions = await _fiqhRepository.getSourceVersions();
+      installedContentPacks = await _contentPackRegistry.getInstalledPacks(
+        preferredLanguageCode: preferredLanguageCode,
+      );
 
       scholarFeedSources = await _scholarFeedRepository.getAvailableSources();
       final ScholarFeedSyncResult cached =
@@ -86,5 +98,6 @@ class SettingsController extends ChangeNotifier {
     await _quranRepository.dispose();
     await _hadithRepository.dispose();
     await _scholarFeedRepository.dispose();
+    await _contentPackRegistry.dispose();
   }
 }

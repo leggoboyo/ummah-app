@@ -35,6 +35,8 @@ class IosNotificationWindowPlanner {
       health = const NotificationHealth(
         status: NotificationHealthStatus.critical,
         message: 'Prayer reminders are not scheduled right now.',
+        actionHint:
+            'Open Ummah App and refresh prayer alerts to schedule the next set of reminders.',
       );
     } else if (coverageUntil!.difference(now) < const Duration(days: 3)) {
       health = NotificationHealth(
@@ -43,6 +45,8 @@ class IosNotificationWindowPlanner {
             'Prayer reminders are active. Open the app soon to keep them going.',
         coverageUntil: coverageUntil,
         scheduledCount: scheduled.length,
+        actionHint:
+            'Open Ummah App within the next few days so iPhone can queue the next rolling reminder window.',
       );
     } else {
       health = NotificationHealth(
@@ -50,6 +54,8 @@ class IosNotificationWindowPlanner {
         message: 'Prayer reminders are ready.',
         coverageUntil: coverageUntil,
         scheduledCount: scheduled.length,
+        actionHint:
+            'Open Ummah App after travel, daylight-saving changes, or at least once a week to keep future reminders scheduled.',
       );
     }
 

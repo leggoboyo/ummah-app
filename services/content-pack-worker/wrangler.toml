@@ -7,6 +7,7 @@ preview_urls = false
 [vars]
 PACKS_DEFAULT_ENVIRONMENT = "staging"
 STARTER_CLAIMS_DAILY_BUDGET = "400"
+PACK_DOWNLOAD_TTL_SECONDS = "180"
 
 [[r2_buckets]]
 binding = "PACKS_BUCKET"

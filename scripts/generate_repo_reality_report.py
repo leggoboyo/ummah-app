@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import json
+import re
+import shutil
+import subprocess
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+OUTPUT_DIR = ROOT / "build" / "repo-reality"
+
+
+def run(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        list(args),
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def write_file(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content.rstrip() + "\n", encoding="utf-8")
+
+
+def read_text(relative_path: str) -> str:
+    return (ROOT / relative_path).read_text(encoding="utf-8")
+
+
+def extract_android_package() -> str:
+    build_gradle = read_text("mobile/app/android/app/build.gradle.kts")
+    match = re.search(r'applicationId\s*=\s*"([^"]+)"', build_gradle)
+    return match.group(1) if match else "unknown"
+
+
+def extract_ios_bundle_ids() -> list[str]:
+    pbxproj = read_text("mobile/app/ios/Runner.xcodeproj/project.pbxproj")
+    bundle_ids = re.findall(r"PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);", pbxproj)
+    deduped: list[str] = []
+    for bundle_id in bundle_ids:
+      if bundle_id not in deduped:
+        deduped.append(bundle_id)
+    return deduped
+
+
+def gather_network_inventory() -> str:
+    result = run(
+        "rg",
+        "-n",
+        r"https://|http://|/v1/packs/manifest|/v1/packs/access|/v1/packs/download|apiBaseUrl",
+        "mobile/app",
+        "features",
+        "packages",
+        "services",
+        "-g",
+        "!**/test/**",
+        "-g",
+        "!**/*.lock",
+        "-g",
+        "!**/*.txt",
+        "-g",
+        "!**/*.md",
+    )
+    return result.stdout or "(no network surfaces matched)\n"
+
+
+def gather_permissions_inventory() -> str:
+    lines = [
+        "Android manifest permissions and receivers:",
+        run(
+            "rg",
+            "-n",
+            r"uses-permission|BOOT_COMPLETED|MY_PACKAGE_REPLACED|receiver",
+            "mobile/app/android/app/src/main/AndroidManifest.xml",
+        ).stdout.strip(),
+        "",
+        "iOS permission declarations:",
+        run(
+            "rg",
+            "-n",
+            r"NSLocation|NSUserNotifications|UIBackgroundModes",
+            "mobile/app/ios/Runner/Info.plist",
+        ).stdout.strip(),
+    ]
+    return "\n".join(lines).strip() + "\n"
+
+
+def gather_dependency_inventory() -> str:
+    package_lines = []
+    for pubspec in sorted(ROOT.glob("**/pubspec.yaml")):
+        relative_path = pubspec.relative_to(ROOT)
+        content = pubspec.read_text(encoding="utf-8").splitlines()
+        package_name = next(
+            (
+                line.split(":", 1)[1].strip()
+                for line in content
+                if line.startswith("name:")
+            ),
+            relative_path.parent.name,
+        )
+        package_lines.append(f"[{relative_path}] package `{package_name}`")
+        current_section = None
+        for line in content:
+            stripped = line.rstrip()
+            if stripped in {"dependencies:", "dev_dependencies:"}:
+                current_section = stripped[:-1]
+                package_lines.append(f"  {current_section}:")
+                continue
+            if current_section is None:
+                continue
+            if not stripped:
+                continue
+            if not line.startswith("  "):
+                current_section = None
+                continue
+            if re.match(r"  [A-Za-z0-9_.-]+:", line):
+                package_lines.append(f"    {stripped.strip()}")
+
+    worker_package_json = ROOT / "services" / "content-pack-worker" / "package.json"
+    if worker_package_json.exists():
+        package_lines.append("")
+        package_lines.append("[services/content-pack-worker/package.json]")
+        worker = json.loads(worker_package_json.read_text(encoding="utf-8"))
+        for section in ("dependencies", "devDependencies"):
+            dependencies = worker.get(section, {})
+            if not dependencies:
+                continue
+            package_lines.append(f"  {section}:")
+            for name, version in sorted(dependencies.items()):
+                package_lines.append(f"    {name}: {version}")
+
+    return "\n".join(package_lines).strip() + "\n"
+
+
+def gather_workflow_lint_status() -> str:
+    actionlint = shutil.which("actionlint")
+    if actionlint is None:
+        return (
+            "actionlint is not installed locally. Install it (for example: brew install actionlint) "
+            "or rely on the Workflow Lint GitHub Action.\n"
+        )
+
+    result = run(actionlint, "-color=never")
+    if result.returncode == 0:
+        return "actionlint: clean\n"
+    return f"actionlint: failed\n\n{result.stdout}{result.stderr}".strip() + "\n"
+
+
+def build_summary(android_package: str, ios_bundle_ids: list[str]) -> str:
+    bundle_lines = "\n".join(f"- `{bundle_id}`" for bundle_id in ios_bundle_ids)
+    return f"""# Repo Reality Inventory
+
+Generated by `python3 scripts/generate_repo_reality_report.py`.
+
+## Application identity
+- Android namespace/applicationId: `{android_package}`
+- iOS bundle identifiers:
+{bundle_lines}
+
+## Inventory files
+- [build/repo-reality/network_endpoints.txt]({OUTPUT_DIR / "network_endpoints.txt"})
+- [build/repo-reality/permissions_inventory.txt]({OUTPUT_DIR / "permissions_inventory.txt"})
+- [build/repo-reality/dependency_inventory.txt]({OUTPUT_DIR / "dependency_inventory.txt"})
+- [build/repo-reality/workflow_lint.txt]({OUTPUT_DIR / "workflow_lint.txt"})
+
+Regenerate all of the above with:
+
+```bash
+make repo-reality-report
+```
+"""
+
+
+def main() -> int:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    android_package = extract_android_package()
+    ios_bundle_ids = extract_ios_bundle_ids()
+
+    write_file(OUTPUT_DIR / "network_endpoints.txt", gather_network_inventory())
+    write_file(
+        OUTPUT_DIR / "permissions_inventory.txt",
+        gather_permissions_inventory(),
+    )
+    write_file(
+        OUTPUT_DIR / "dependency_inventory.txt",
+        gather_dependency_inventory(),
+    )
+    write_file(OUTPUT_DIR / "workflow_lint.txt", gather_workflow_lint_status())
+    write_file(OUTPUT_DIR / "summary.md", build_summary(android_package, ios_bundle_ids))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

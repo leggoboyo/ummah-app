@@ -43,12 +43,20 @@ void main() {
               'Synced at 41.8781, -87.6298 for ummah_0123456789abcdef0123456789abcdef',
           timestamp: DateTime(2026, 3, 14),
         ),
+        AppLogEntry(
+          level: AppLogLevel.warning,
+          message:
+              'Downloaded https://ummah-content-pack-worker.zkhawaja721.workers.dev/v1/packs/download?packId=hadith_pack_en&sig=abcdef123456',
+          timestamp: DateTime(2026, 3, 14, 1),
+        ),
       ],
       includeSensitiveDetails: false,
     );
 
     expect(report.contains('ummah_0123456789abcdef0123456789abcdef'), isFalse);
     expect(report.contains('41.8781, -87.6298'), isFalse);
+    expect(report.contains('https://ummah-content-pack-worker'), isFalse);
+    expect(report.contains('[hadith-pack-url redacted]'), isTrue);
     expect(report.contains('Redacted in the standard support report.'), isTrue);
   });
 }

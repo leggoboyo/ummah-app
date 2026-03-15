@@ -31,6 +31,7 @@ void main() {
       expect(plan.scheduled, hasLength(60));
       expect(plan.deferred, hasLength(20));
       expect(plan.health.status, NotificationHealthStatus.warning);
+      expect(plan.health.actionHint, contains('next few days'));
     });
 
     test('reports healthy coverage when the next week is planned', () {
@@ -59,6 +60,20 @@ void main() {
       expect(plan.scheduled.length, greaterThanOrEqualTo(35));
       expect(plan.health.status, NotificationHealthStatus.healthy);
       expect(plan.health.coverageUntil, isNotNull);
+      expect(plan.health.actionHint, contains('once a week'));
+    });
+
+    test('reports critical status and recovery hint when nothing is queued',
+        () {
+      final IosNotificationWindowPlan plan = planner.plan(
+        now: DateTime(2026, 3, 13, 8),
+        queuedEvents: const <PrayerNotificationEvent>[],
+        preferences: const PrayerNotificationPreferences(),
+      );
+
+      expect(plan.scheduled, isEmpty);
+      expect(plan.health.status, NotificationHealthStatus.critical);
+      expect(plan.health.actionHint, contains('refresh prayer alerts'));
     });
   });
 }

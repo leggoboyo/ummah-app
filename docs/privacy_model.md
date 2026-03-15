@@ -3,6 +3,8 @@
 ## Product posture
 Ummah App is designed so the free core does not require an account, cloud sync, analytics, or telemetry. Prayer times, adhan reminders, qibla bearing, Hijri date, and Quran Arabic reading are intended to work fully offline.
 
+Verified implementation details are tracked in `docs/repo_reality_report.md` and the reproducible inventories under `build/repo-reality/`.
+
 ## What is stored locally
 ### Shared preferences
 - language choice
@@ -15,6 +17,7 @@ Ummah App is designed so the free core does not require an account, cloud sync, 
 - preview billing state when preview mode is used
 
 ### Secure OS storage
+- optional app user identity used for RevenueCat and remote Hadith pack access
 - BYOK OpenAI API key, if the user enables AI assistant BYOK mode
 
 ### Local databases
@@ -29,6 +32,7 @@ Ummah App is designed so the free core does not require an account, cloud sync, 
 - IslamHouse RSS requests: only when the user refreshes scholar feeds
 - OpenAI requests: only when the user submits an AI assistant question in BYOK mode
 - RevenueCat requests: only for optional paid billing state and entitlement restoration
+- The optional app user identity is generated lazily when one of those optional flows actually needs it.
 
 ## What does not leave the device for the free core
 - prayer calculations
@@ -76,3 +80,4 @@ Ummah App is designed so the free core does not require an account, cloud sync, 
 - do not add telemetry without explicit consent design, docs, and code review
 - do not add background location or hidden refresh behavior
 - avoid logging raw religious queries, coordinates, or billing identifiers
+- refresh `docs/repo_reality_report.md` before claiming a new remote dependency is optional or core-safe

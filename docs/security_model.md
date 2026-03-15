@@ -6,6 +6,8 @@
 - RevenueCat: optional billing authority for paid entitlements.
 - OpenAI: optional BYOK endpoint for AI assistant only.
 
+Concrete file-level evidence for the current trust boundaries lives in `docs/repo_reality_report.md`.
+
 ## Sensitive assets
 - BYOK OpenAI API key
 - local app user identifier used for RevenueCat/content-pack access
@@ -14,6 +16,7 @@
 
 ## Storage policy
 - BYOK secrets go into `flutter_secure_storage`.
+- optional RevenueCat/Hadith app user identity also lives in secure OS storage and is created only when optional billing/pack flows need it.
 - general settings go into shared preferences.
 - offline corpora and indexes live in local SQLite databases.
 - no server-side profile store exists for the free core.
@@ -36,7 +39,8 @@
 - download signatures now bind pack id, object key, app user id, and expiry
 - download requests re-check the manifest/object mapping before reading from R2
 - starter-pack claims are idempotent and keyed by app user id
-- paid-pack access should fail as unavailable when billing-side configuration is missing
+- paid-pack access fails closed as unavailable when the RevenueCat Worker secret is missing
+- signed download URLs are treated as bearer tokens and redacted from diagnostics/support surfaces
 
 ## Security review rules for future changes
 - no secret API keys in mobile env files
@@ -49,3 +53,4 @@
 - rotate Worker secrets if download signing or RevenueCat credentials are exposed
 - invalidate/update remote pack manifests if corrupted artifacts are published
 - cut a redacted support report first before asking a user for detailed diagnostics
+- keep `STARTER_CLAIMS_DAILY_BUDGET` conservative until Cloudflare usage is understood in production

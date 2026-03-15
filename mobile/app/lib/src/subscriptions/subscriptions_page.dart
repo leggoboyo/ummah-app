@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:subscriptions/subscriptions.dart';
 
 import '../bootstrap/app_controller.dart';
 
-class PlansAndUnlocksScreen extends StatelessWidget {
+class PlansAndUnlocksScreen extends StatefulWidget {
   const PlansAndUnlocksScreen({
     super.key,
     required this.controller,
@@ -15,13 +17,26 @@ class PlansAndUnlocksScreen extends StatelessWidget {
   final AppEntitlement? focusEntitlement;
 
   @override
+  State<PlansAndUnlocksScreen> createState() => _PlansAndUnlocksScreenState();
+}
+
+class _PlansAndUnlocksScreenState extends State<PlansAndUnlocksScreen> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(widget.controller.loadBillingStateIfNeeded());
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: widget.controller,
       builder: (BuildContext context, _) {
-        final SubscriptionProduct? recommendedProduct = focusEntitlement == null
-            ? null
-            : controller.recommendedProductFor(focusEntitlement!);
+        final SubscriptionProduct? recommendedProduct =
+            widget.focusEntitlement == null
+                ? null
+                : widget.controller
+                    .recommendedProductFor(widget.focusEntitlement!);
 
         return Scaffold(
           appBar: AppBar(
@@ -30,25 +45,25 @@ class PlansAndUnlocksScreen extends StatelessWidget {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: <Widget>[
-              if (focusEntitlement != null)
+              if (widget.focusEntitlement != null)
                 _FocusedModuleCard(
-                  entitlement: focusEntitlement!,
+                  entitlement: widget.focusEntitlement!,
                   recommendedProduct: recommendedProduct,
-                  controller: controller,
+                  controller: widget.controller,
                 ),
-              if (controller.startupSelection.deferredPackIds.isNotEmpty)
-                _DeferredPackCard(controller: controller),
+              if (widget.controller.startupSelection.deferredPackIds.isNotEmpty)
+                _DeferredPackCard(controller: widget.controller),
               const _CoreFreeCard(),
               const SizedBox(height: 12),
-              _BillingStateCard(controller: controller),
+              _BillingStateCard(controller: widget.controller),
               const SizedBox(height: 12),
-              _ProductActionsCard(controller: controller),
+              _ProductActionsCard(controller: widget.controller),
               const SizedBox(height: 12),
-              ...controller.subscriptionCatalog.map(
+              ...widget.controller.subscriptionCatalog.map(
                 (SubscriptionProduct product) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _ProductCard(
-                    controller: controller,
+                    controller: widget.controller,
                     product: product,
                     highlighted: recommendedProduct != null &&
                         recommendedProduct.id == product.id,

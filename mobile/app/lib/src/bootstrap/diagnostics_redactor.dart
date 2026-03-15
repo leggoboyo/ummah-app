@@ -10,9 +10,13 @@ class DiagnosticsRedactor {
   static final RegExp _apiKeyPattern = RegExp(r'sk-[A-Za-z0-9_-]{16,}');
   static final RegExp _bearerTokenPattern =
       RegExp(r'Bearer\s+[A-Za-z0-9._-]{12,}');
+  static final RegExp _signedPackUrlPattern = RegExp(
+    "https?://[^\\s\"']+/v1/packs/download\\?[^\\s\"']+",
+  );
 
   static String redactText(String value) {
     return value
+        .replaceAll(_signedPackUrlPattern, '[hadith-pack-url redacted]')
         .replaceAll(_appUserIdPattern, 'ummah_[redacted]')
         .replaceAll(_coordinatePairPattern, '[coordinates redacted]')
         .replaceAll(_apiKeyPattern, '[api-key redacted]')

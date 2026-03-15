@@ -6,6 +6,8 @@ import {
   verifyPayload,
 } from "./lib/signing.mjs";
 
+const DEFAULT_DOWNLOAD_TTL_SECONDS = 180;
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -90,7 +92,9 @@ async function handleAccess(request, env) {
     appUserId,
   });
 
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + resolveDownloadTtlSeconds(env.PACK_DOWNLOAD_TTL_SECONDS) * 1000,
+  ).toISOString();
   const signaturePayload = buildDownloadSignaturePayload({
     packId: pack.pack_id,
     objectKey: pack.object_key,
@@ -190,7 +194,7 @@ async function handleDownload(request, env) {
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("content-type", "application/gzip");
-  headers.set("cache-control", "private, max-age=600");
+  headers.set("cache-control", "private, no-store");
   headers.set("content-disposition", `attachment; filename="${pack.pack_id}.json.gz"`);
   headers.set("x-content-type-options", "nosniff");
   headers.set("x-ummah-pack-environment", environment);
@@ -208,4 +212,12 @@ function json(payload, status = 200, extraHeaders = {}) {
       ...extraHeaders,
     },
   });
+}
+
+function resolveDownloadTtlSeconds(rawValue) {
+  const parsed = Number.parseInt(`${rawValue || DEFAULT_DOWNLOAD_TTL_SECONDS}`, 10);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_DOWNLOAD_TTL_SECONDS;
+  }
+  return Math.min(Math.max(parsed, 60), 300);
 }

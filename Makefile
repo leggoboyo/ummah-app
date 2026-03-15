@@ -2,6 +2,17 @@ bootstrap:
 	dart pub get
 	dart run melos bootstrap
 
+repo-reality-report:
+	python3 scripts/generate_repo_reality_report.py
+
+workflow-lint:
+	@if command -v actionlint >/dev/null 2>&1; then \
+		actionlint -color; \
+	else \
+		echo "actionlint is required for workflow linting. Install it first (for example: brew install actionlint)." >&2; \
+		exit 1; \
+	fi
+
 format-check:
 	dart format --set-exit-if-changed .
 

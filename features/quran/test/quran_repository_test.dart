@@ -33,6 +33,14 @@ void main() {
     expect(sourceVersion?.version, '1.1');
   });
 
+  test('reads bundled Arabic ayahs without any network sync', () async {
+    final List<QuranAyah> ayahs = await repository.getSurahAyahs(1);
+
+    expect(ayahs, hasLength(2));
+    expect(ayahs.first.arabicText, contains('بِسْمِ ٱللَّهِ'));
+    expect(ayahs.first.translationText, isNull);
+  });
+
   test('search returns Arabic and translation matches from SQLite FTS',
       () async {
     await repository.refreshTranslationCatalog(languageCode: 'en');

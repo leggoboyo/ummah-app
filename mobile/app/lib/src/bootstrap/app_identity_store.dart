@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:core/core.dart';
 
+import 'flutter_secure_value_store.dart';
 import 'shared_preferences_key_value_store.dart';
 
 abstract interface class AppIdentityStore {
@@ -10,15 +11,18 @@ abstract interface class AppIdentityStore {
   Future<String?> readRevenueCatAppUserId();
 }
 
-class SharedPreferencesAppIdentityStore implements AppIdentityStore {
-  SharedPreferencesAppIdentityStore({
+class SecureAppIdentityStore implements AppIdentityStore {
+  SecureAppIdentityStore({
+    SecureValueStore? secureValueStore,
     KeyValueStore? keyValueStore,
     Random? random,
-  })  : _keyValueStore = keyValueStore ?? SharedPreferencesKeyValueStore(),
+  })  : _secureValueStore = secureValueStore ?? FlutterSecureValueStore(),
+        _keyValueStore = keyValueStore ?? SharedPreferencesKeyValueStore(),
         _random = random ?? Random.secure();
 
   static const String _revenueCatAppUserIdKey = 'revenuecat_app_user_id_v1';
 
+  final SecureValueStore _secureValueStore;
   final KeyValueStore _keyValueStore;
   final Random _random;
 
@@ -30,13 +34,28 @@ class SharedPreferencesAppIdentityStore implements AppIdentityStore {
     }
 
     final String generated = _generateAppUserId();
-    await _keyValueStore.writeString(_revenueCatAppUserIdKey, generated);
+    await _secureValueStore.writeSecret(_revenueCatAppUserIdKey, generated);
+    await _keyValueStore.remove(_revenueCatAppUserIdKey);
     return generated;
   }
 
   @override
-  Future<String?> readRevenueCatAppUserId() {
-    return _keyValueStore.readString(_revenueCatAppUserIdKey);
+  Future<String?> readRevenueCatAppUserId() async {
+    final String? secureValue =
+        await _secureValueStore.readSecret(_revenueCatAppUserIdKey);
+    if (secureValue != null && secureValue.isNotEmpty) {
+      return secureValue;
+    }
+
+    final String? legacyValue =
+        await _keyValueStore.readString(_revenueCatAppUserIdKey);
+    if (legacyValue == null || legacyValue.isEmpty) {
+      return null;
+    }
+
+    await _secureValueStore.writeSecret(_revenueCatAppUserIdKey, legacyValue);
+    await _keyValueStore.remove(_revenueCatAppUserIdKey);
+    return legacyValue;
   }
 
   String _generateAppUserId() {

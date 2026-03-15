@@ -37,7 +37,7 @@ class AppController extends ChangeNotifier {
     AppSupportReportBuilder? supportReportBuilder,
   })  : _profileStore = profileStore ?? SharedPreferencesAppProfileStore(),
         _environment = environment ?? AppEnvironment.fromCompileTime(),
-        _identityStore = identityStore ?? SharedPreferencesAppIdentityStore(),
+        _identityStore = identityStore ?? SecureAppIdentityStore(),
         _logger = logger ?? _buildDiagnosticsLogger(),
         _locationResolver = locationResolver ??
             AppLocationResolver(
@@ -59,9 +59,11 @@ class AppController extends ChangeNotifier {
             SubscriptionRepository(
               provider: _buildSubscriptionProvider(
                 environment ?? AppEnvironment.fromCompileTime(),
-                identityStore ?? SharedPreferencesAppIdentityStore(),
+                identityStore ?? SecureAppIdentityStore(),
               ),
-            );
+            ) {
+    _applySubscriptionState(_initialSubscriptionStateFor(_environment));
+  }
 
   final AppProfileStore _profileStore;
   final AppEnvironment _environment;
@@ -81,6 +83,7 @@ class AppController extends ChangeNotifier {
   String _locationMessage =
       'Manual coordinates are active until setup is complete.';
   String? _revenueCatAppUserId;
+  bool _subscriptionsLoaded = false;
 
   bool isReady = false;
   bool isWorking = false;
@@ -176,9 +179,8 @@ class AppController extends ChangeNotifier {
       'App bootstrap started for ${_environment.buildLabel}.',
     );
     await _notificationSyncService.initialize();
-    _revenueCatAppUserId = await _identityStore.ensureRevenueCatAppUserId();
+    _revenueCatAppUserId = await _identityStore.readRevenueCatAppUserId();
     _profile = await _profileStore.load();
-    await _initializeSubscriptions();
 
     if (_profile.onboardingComplete) {
       await _refreshCoreState(
@@ -245,6 +247,7 @@ class AppController extends ChangeNotifier {
     isWorking = true;
     notifyListeners();
     try {
+      await _ensureSubscriptionsLoaded();
       final PurchaseResult result =
           await _subscriptionRepository.purchase(productId);
       _applySubscriptionState(result.state);
@@ -265,7 +268,9 @@ class AppController extends ChangeNotifier {
     isWorking = true;
     notifyListeners();
     try {
-      final SubscriptionState state = await _subscriptionRepository.refresh();
+      final SubscriptionState state = await _loadSubscriptionState(
+        forceRefresh: _subscriptionsLoaded,
+      );
       _applySubscriptionState(state);
       await _logger.log(
         AppLogLevel.info,
@@ -281,6 +286,7 @@ class AppController extends ChangeNotifier {
     isWorking = true;
     notifyListeners();
     try {
+      await _ensureSubscriptionsLoaded();
       final PurchaseResult result =
           await _subscriptionRepository.restorePurchases();
       _applySubscriptionState(result.state);
@@ -295,6 +301,25 @@ class AppController extends ChangeNotifier {
       isWorking = false;
       notifyListeners();
     }
+  }
+
+  Future<void> loadBillingStateIfNeeded() async {
+    if (_subscriptionsLoaded) {
+      return;
+    }
+    final SubscriptionState state = await _loadSubscriptionState();
+    _applySubscriptionState(state);
+    notifyListeners();
+  }
+
+  Future<String> ensureAppUserId() async {
+    final String appUserId = _revenueCatAppUserId ??
+        await _identityStore.ensureRevenueCatAppUserId();
+    if (_revenueCatAppUserId != appUserId) {
+      _revenueCatAppUserId = appUserId;
+      notifyListeners();
+    }
+    return appUserId;
   }
 
   Future<void> completeOnboarding({
@@ -475,6 +500,23 @@ class AppController extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshForegroundReliability() async {
+    if (!_profile.onboardingComplete || isWorking) {
+      return;
+    }
+    await _refreshCoreState(
+      requestPermissions: false,
+      requestLocationPermission: false,
+    );
+    await _logger.log(
+      notificationHealth?.status == NotificationHealthStatus.healthy
+          ? AppLogLevel.info
+          : AppLogLevel.warning,
+      'Foreground reliability refresh completed. ${notificationHealth?.message ?? 'No notification health available.'}',
+    );
+    notifyListeners();
+  }
+
   Future<void> _refreshCoreState({
     required bool requestPermissions,
     required bool requestLocationPermission,
@@ -521,17 +563,31 @@ class AppController extends ChangeNotifier {
     );
   }
 
-  Future<void> _initializeSubscriptions() async {
-    final SubscriptionState state = await _subscriptionRepository.initialize();
-    _applySubscriptionState(state);
-  }
-
   void _applySubscriptionState(SubscriptionState state) {
     _subscriptionState = state;
     _entitlements = <AppEntitlement>{
       AppEntitlement.coreFree,
       ...state.activeEntitlements,
     };
+  }
+
+  Future<void> _ensureSubscriptionsLoaded() async {
+    if (_subscriptionsLoaded) {
+      return;
+    }
+    final SubscriptionState state = await _loadSubscriptionState();
+    _applySubscriptionState(state);
+  }
+
+  Future<SubscriptionState> _loadSubscriptionState({
+    bool forceRefresh = false,
+  }) async {
+    _revenueCatAppUserId = await _identityStore.ensureRevenueCatAppUserId();
+    final SubscriptionState state = forceRefresh
+        ? await _subscriptionRepository.refresh()
+        : await _subscriptionRepository.initialize();
+    _subscriptionsLoaded = true;
+    return state;
   }
 
   Future<List<AppLogEntry>> loadDiagnosticsEntries() {
@@ -582,6 +638,40 @@ class AppController extends ChangeNotifier {
           providerKind: BillingProviderKind.revenueCat,
           unavailableMessage:
               'Billing is intentionally disabled in this build flavor.',
+        );
+    }
+  }
+
+  static SubscriptionState _initialSubscriptionStateFor(
+    AppEnvironment environment,
+  ) {
+    final List<SubscriptionProduct> catalog = buildDefaultSubscriptionCatalog();
+    switch (environment.entitlementProvider) {
+      case EntitlementProviderMode.preview:
+        return SubscriptionState.initial(
+          providerKind: BillingProviderKind.localPreview,
+          catalog: catalog,
+          availability: BillingAvailability.preview,
+          statusMessage:
+              'Preview billing stays local to this device until you open Plans & Unlocks.',
+        );
+      case EntitlementProviderMode.revenueCat:
+        return SubscriptionState.initial(
+          providerKind: BillingProviderKind.revenueCat,
+          catalog: catalog,
+          availability: environment.hasRevenueCatKey
+              ? BillingAvailability.configured
+              : BillingAvailability.unavailable,
+          statusMessage: environment.hasRevenueCatKey
+              ? 'Store access has not been checked on this device yet.'
+              : 'Store billing is not configured for this build.',
+        );
+      case EntitlementProviderMode.none:
+        return SubscriptionState.initial(
+          providerKind: BillingProviderKind.revenueCat,
+          catalog: catalog,
+          availability: BillingAvailability.unavailable,
+          statusMessage: 'Billing is intentionally disabled in this build.',
         );
     }
   }

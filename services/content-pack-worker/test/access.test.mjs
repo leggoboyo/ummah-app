@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { resolvePackAccess } from "../src/lib/access.mjs";
 
-function buildEnv({ claimValue = null, entitlement = false } = {}) {
+function buildEnv({ claimValue = null, revenueCatApiKey = "rc_secret" } = {}) {
   const values = new Map();
   if (claimValue !== null) {
     values.set("starter:ummah_0123456789abcdef0123456789abcdef", claimValue);
@@ -18,8 +18,7 @@ function buildEnv({ claimValue = null, entitlement = false } = {}) {
         values.set(key, value);
       },
     },
-    REVENUECAT_API_KEY: entitlement ? "rc_secret" : "rc_secret",
-    async fetch() {},
+    REVENUECAT_API_KEY: revenueCatApiKey,
   };
 }
 
@@ -103,4 +102,61 @@ test("starter-free packs stop once the daily budget is exhausted", async () => {
       error instanceof Response &&
       error.status === 503,
   );
+});
+
+test("paid packs fail closed when the RevenueCat secret is missing", async () => {
+  const pack = {
+    pack_id: "hadith_pack_ar",
+    is_starter_free_eligible: false,
+    required_entitlement_key: "hadith_plus",
+  };
+
+  await assert.rejects(
+    () =>
+      resolvePackAccess({
+        env: buildEnv({ revenueCatApiKey: "" }),
+        pack,
+        appUserId: "ummah_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      }),
+    (error) =>
+      error instanceof Response &&
+      error.status === 503,
+  );
+});
+
+test("paid packs are allowed only when RevenueCat confirms the entitlement", async () => {
+  const pack = {
+    pack_id: "hadith_pack_ar",
+    is_starter_free_eligible: false,
+    required_entitlement_key: "hadith_plus",
+  };
+  const originalFetch = global.fetch;
+  global.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        subscriber: {
+          entitlements: {
+            hadith_plus: {
+              purchase_date: "2026-03-14T00:00:00Z",
+            },
+          },
+        },
+      }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      },
+    );
+
+  try {
+    const access = await resolvePackAccess({
+      env: buildEnv(),
+      pack,
+      appUserId: "ummah_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    });
+
+    assert.deepEqual(access, { isFree: false });
+  } finally {
+    global.fetch = originalFetch;
+  }
 });

@@ -53,6 +53,8 @@ class AppSupportReportBuilder {
       'RevenueCat App User ID: ${DiagnosticsRedactor.formatIdentifier(revenueCatAppUserId, includeSensitiveDetails: includeSensitiveDetails)}',
       'Notification health: ${notificationHealth?.status.name ?? 'unknown'}',
       'Notification message: ${notificationHealth?.message ?? 'No message yet'}',
+      'Notification action hint: ${notificationHealth?.actionHint ?? 'No action hint'}',
+      'Notification coverage until: ${notificationHealth?.coverageUntil?.toIso8601String() ?? 'Unknown'}',
       'Resolved location: ${DiagnosticsRedactor.redactText(locationSummary)}',
       'Active coordinates: ${DiagnosticsRedactor.formatCoordinates(activeCoordinates, includeSensitiveDetails: includeSensitiveDetails)}',
       'Active time zone offset: ${activeTimeZoneOffset.inMinutes} minutes',

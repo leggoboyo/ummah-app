@@ -32,14 +32,18 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
+  static const int _resumeSyncDebounceSeconds = 30;
+
   int _selectedIndex = 0;
   late final QuranController _quranController;
   late final Timer _clockTimer;
   DateTime _now = DateTime.now();
+  DateTime? _lastForegroundRefreshAt;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(_lifecycleObserver);
     _quranController = QuranController(
       startupMode: widget.controller.quranStartupMode,
       startupSelection: widget.controller.startupSelection,
@@ -61,9 +65,24 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
     _clockTimer.cancel();
     _quranController.dispose();
     super.dispose();
+  }
+
+  late final WidgetsBindingObserver _lifecycleObserver =
+      _AppLifecycleObserver(onResume: _handleForegroundResume);
+
+  Future<void> _handleForegroundResume() async {
+    final DateTime now = DateTime.now();
+    if (_lastForegroundRefreshAt != null &&
+        now.difference(_lastForegroundRefreshAt!) <
+            const Duration(seconds: _resumeSyncDebounceSeconds)) {
+      return;
+    }
+    _lastForegroundRefreshAt = now;
+    await widget.controller.refreshForegroundReliability();
   }
 
   @override
@@ -203,14 +222,9 @@ class _DashboardPage extends StatelessWidget {
             status:
                 notificationHealth?.status ?? NotificationHealthStatus.warning,
           ),
-          footer: Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: controller.isWorking
-                  ? null
-                  : () => controller.refreshNotifications(),
-              child: const Text('Refresh prayer alerts'),
-            ),
+          footer: _NotificationReliabilityFooter(
+            controller: controller,
+            notificationHealth: notificationHealth,
           ),
         ),
         Card(
@@ -432,7 +446,11 @@ class _MorePage extends StatelessWidget {
   final QuranController quranController;
   final AppController appController;
 
-  void _openHadithFinder(BuildContext context) {
+  Future<void> _openHadithFinder(BuildContext context) async {
+    final String appUserId = await appController.ensureAppUserId();
+    if (!context.mounted) {
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (BuildContext context) => HadithLibraryScreen(
@@ -440,7 +458,7 @@ class _MorePage extends StatelessWidget {
           hasPremiumLanguageAccess:
               appController.hasAccess(AppEntitlement.hadithPlus),
           startupSelection: appController.startupSelection,
-          appUserId: appController.revenueCatAppUserId ?? '',
+          appUserId: appUserId,
           refreshPackAccess: appController.refreshEntitlements,
         ),
       ),
@@ -632,6 +650,21 @@ class _MorePage extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  _AppLifecycleObserver({
+    required Future<void> Function() onResume,
+  }) : _onResume = onResume;
+
+  final Future<void> Function() _onResume;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_onResume());
+    }
   }
 }
 
@@ -1351,6 +1384,51 @@ class _HealthBadge extends StatelessWidget {
   }
 }
 
+class _NotificationReliabilityFooter extends StatelessWidget {
+  const _NotificationReliabilityFooter({
+    required this.controller,
+    required this.notificationHealth,
+  });
+
+  final AppController controller;
+  final NotificationHealth? notificationHealth;
+
+  @override
+  Widget build(BuildContext context) {
+    final DateTime? coverageUntil = notificationHealth?.coverageUntil;
+    final String? actionHint = notificationHealth?.actionHint;
+    final List<Widget> children = <Widget>[
+      if (coverageUntil != null)
+        Text(
+          'Scheduled through ${_formatCoverageUntil(coverageUntil)}.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      if (actionHint != null && actionHint.isNotEmpty) ...<Widget>[
+        if (coverageUntil != null) const SizedBox(height: 6),
+        Text(
+          actionHint,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+      const SizedBox(height: 10),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton(
+          onPressed: controller.isWorking
+              ? null
+              : () => controller.refreshNotifications(),
+          child: const Text('Refresh prayer alerts'),
+        ),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+}
+
 class _QiblaDial extends StatelessWidget {
   const _QiblaDial({
     required this.rotationDegrees,
@@ -1453,6 +1531,24 @@ String _formatTime(DateTime value) {
   final String minute = value.minute.toString().padLeft(2, '0');
   final String suffix = value.hour >= 12 ? 'PM' : 'AM';
   return '$hour:$minute $suffix';
+}
+
+String _formatCoverageUntil(DateTime value) {
+  final String month = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ][value.month - 1];
+  return '$month ${value.day} at ${_formatTime(value)}';
 }
 
 String _locationBadgeLabel(AppController controller) {

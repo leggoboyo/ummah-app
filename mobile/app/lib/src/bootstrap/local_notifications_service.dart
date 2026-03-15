@@ -124,6 +124,8 @@ class LocalPrayerNotificationsService implements PrayerNotificationsService {
         health: const NotificationHealth(
           status: NotificationHealthStatus.critical,
           message: 'Prayer reminders are off on this phone.',
+          actionHint:
+              'Turn notifications back on in system settings, then refresh prayer alerts in Ummah App.',
         ),
         scheduledCount: 0,
         notificationsEnabled: false,
@@ -165,6 +167,7 @@ class LocalPrayerNotificationsService implements PrayerNotificationsService {
             'Prayer reminders are ready on this phone.',
         coverageUntil: coverageUntil,
         scheduledCount: scheduledEvents.length,
+        actionHint: androidAlarmDecision?.actionHint,
       );
     }
 

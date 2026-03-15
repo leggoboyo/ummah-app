@@ -109,7 +109,19 @@ jobs:
 
       - name: Build Android App Bundle
         working-directory: mobile/app
-        run: flutter build appbundle --dart-define-from-file=env/staging.json
+        run: |
+          flutter build apk --debug --dart-define-from-file=env/staging.json
+          flutter build apk --release --dart-define-from-file=env/staging.json
+          flutter build apk --release --split-per-abi --dart-define-from-file=env/staging.json
+          flutter build appbundle --dart-define-from-file=env/staging.json
+
+      - name: Android smoke test (when an emulator is attached)
+        run: |
+          if command -v adb >/dev/null 2>&1 && adb devices | tail -n +2 | grep -q "device$"; then
+            ./scripts/android_smoke_test.sh
+          else
+            echo "No Android emulator is attached on this runner; local smoke script remains available at scripts/android_smoke_test.sh."
+          fi
 
   build-ios:
     runs-on: macos-latest

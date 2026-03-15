@@ -1,0 +1,4 @@
+enum UiPerformanceMode {
+  standard,
+  lean,
+}

@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -20,6 +21,8 @@ class UmmahApp extends StatelessWidget {
       animation: controller,
       builder: (BuildContext context, _) {
         final AppStrings strings = AppStrings.forCode(controller.languageCode);
+        final UiPerformanceMode uiPerformanceMode =
+            controller.uiPerformanceMode;
         return MaterialApp(
           title: strings.appName,
           debugShowCheckedModeBanner: false,
@@ -34,9 +37,10 @@ class UmmahApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          theme: _buildTheme(),
+          theme: _buildTheme(uiPerformanceMode),
           builder: (BuildContext context, Widget? child) {
             final Widget currentChild = _AppBackdrop(
+              uiPerformanceMode: uiPerformanceMode,
               child: child ?? const SizedBox.shrink(),
             );
 
@@ -60,7 +64,8 @@ class UmmahApp extends StatelessWidget {
     );
   }
 
-  ThemeData _buildTheme() {
+  ThemeData _buildTheme(UiPerformanceMode uiPerformanceMode) {
+    final bool leanMode = uiPerformanceMode == UiPerformanceMode.lean;
     const Color seed = Color(0xFF0D6F59);
     const Color cloud = Color(0xFFF9F7F2);
     final ColorScheme colorScheme = ColorScheme.fromSeed(
@@ -77,27 +82,27 @@ class UmmahApp extends StatelessWidget {
     );
     final TextTheme textTheme = base.textTheme.copyWith(
       headlineMedium: base.textTheme.headlineMedium?.copyWith(
-        fontSize: 33,
+        fontSize: leanMode ? 29 : 33,
         fontWeight: FontWeight.w700,
         height: 1.04,
         letterSpacing: -0.7,
       ),
       headlineSmall: base.textTheme.headlineSmall?.copyWith(
-        fontSize: 28,
+        fontSize: leanMode ? 24 : 28,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
       ),
       titleLarge: base.textTheme.titleLarge?.copyWith(
-        fontSize: 23,
+        fontSize: leanMode ? 21 : 23,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.25,
       ),
       titleMedium: base.textTheme.titleMedium?.copyWith(
-        fontSize: 17,
+        fontSize: leanMode ? 16 : 17,
         fontWeight: FontWeight.w700,
       ),
       bodyLarge: base.textTheme.bodyLarge?.copyWith(
-        fontSize: 16,
+        fontSize: leanMode ? 15 : 16,
         height: 1.5,
       ),
       bodyMedium: base.textTheme.bodyMedium?.copyWith(
@@ -119,6 +124,7 @@ class UmmahApp extends StatelessWidget {
       textTheme: textTheme,
       scaffoldBackgroundColor: Colors.transparent,
       useMaterial3: true,
+      visualDensity: leanMode ? VisualDensity.compact : VisualDensity.standard,
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: colorScheme.onSurface,
@@ -132,7 +138,7 @@ class UmmahApp extends StatelessWidget {
         elevation: 0,
         color: colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(leanMode ? 22 : 28),
           side: BorderSide(
             color: colorScheme.outlineVariant,
           ),
@@ -152,24 +158,24 @@ class UmmahApp extends StatelessWidget {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.92),
-        contentPadding: const EdgeInsets.symmetric(
+        contentPadding: EdgeInsets.symmetric(
           horizontal: 18,
-          vertical: 18,
+          vertical: leanMode ? 15 : 18,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(leanMode ? 18 : 22),
           borderSide: BorderSide(
             color: colorScheme.outlineVariant,
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(leanMode ? 18 : 22),
           borderSide: BorderSide(
             color: colorScheme.outlineVariant,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(leanMode ? 18 : 22),
           borderSide: BorderSide(
             color: colorScheme.primary,
             width: 1.4,
@@ -178,18 +184,24 @@ class UmmahApp extends StatelessWidget {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: leanMode ? 16 : 18,
+            vertical: leanMode ? 14 : 16,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(leanMode ? 18 : 22),
           ),
           textStyle: textTheme.labelLarge,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: EdgeInsets.symmetric(
+            horizontal: leanMode ? 14 : 16,
+            vertical: leanMode ? 12 : 14,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(leanMode ? 16 : 18),
           ),
           textStyle: textTheme.labelLarge,
         ),
@@ -198,7 +210,7 @@ class UmmahApp extends StatelessWidget {
         backgroundColor: Colors.white.withValues(alpha: 0.94),
         indicatorColor: colorScheme.primaryContainer,
         shadowColor: Colors.black.withValues(alpha: 0.06),
-        height: 72,
+        height: leanMode ? 64 : 72,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStatePropertyAll<TextStyle>(
           textTheme.labelMedium!.copyWith(fontWeight: FontWeight.w700),
@@ -214,23 +226,28 @@ class UmmahApp extends StatelessWidget {
 class _AppBackdrop extends StatelessWidget {
   const _AppBackdrop({
     required this.child,
+    required this.uiPerformanceMode,
   });
 
   final Widget child;
+  final UiPerformanceMode uiPerformanceMode;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[
-            Color(0xFFF6F1E6),
-            Color(0xFFF3EEE1),
-            Color(0xFFF8F7F1),
-          ],
-        ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F6F0),
+        gradient: uiPerformanceMode == UiPerformanceMode.standard
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  Color(0xFFF6F1E6),
+                  Color(0xFFF3EEE1),
+                  Color(0xFFF8F7F1),
+                ],
+              )
+            : null,
       ),
       child: child,
     );

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hadith/hadith.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,9 +29,16 @@ class HadithLibraryScreen extends StatefulWidget {
 }
 
 class _HadithLibraryScreenState extends State<HadithLibraryScreen> {
+  static const List<String> _sampleQuestions = <String>[
+    'How should I treat my parents?',
+    'How do I control anger?',
+    'What do hadith say about honesty?',
+    'How should I seek forgiveness?',
+    'What do hadith say about lowering the gaze?',
+  ];
+
   late final HadithController _controller;
   late final TextEditingController _searchController;
-  bool _dismissedPackChooser = false;
 
   @override
   void initState() {
@@ -65,7 +73,62 @@ class _HadithLibraryScreenState extends State<HadithLibraryScreen> {
       builder: (BuildContext context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Hadith Finder'),
+            title: Text(
+              'Hadith Finder',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            actions: <Widget>[
+              if (_controller.availablePacks.isNotEmpty)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.layers_outlined),
+                  tooltip: 'Choose hadith pack',
+                  onSelected: (String value) async {
+                    if (!value.startsWith('pack:')) {
+                      return;
+                    }
+                    final String languageCode = value.substring(5);
+                    if (_controller.isPackInstalled(languageCode)) {
+                      await _controller.setActiveLanguageCode(languageCode);
+                      return;
+                    }
+                    await _controller.installPack(languageCode);
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return _controller.availablePacks
+                        .map((HadithPackManifest pack) {
+                      final bool installed =
+                          _controller.isPackInstalled(pack.languageCode);
+                      final bool active =
+                          _controller.activeLanguageCode == pack.languageCode;
+                      final bool canInstall = _controller.canInstallPack(pack);
+                      final bool recommended =
+                          _controller.recommendedPack?.languageCode ==
+                              pack.languageCode;
+                      return PopupMenuItem<String>(
+                        value: 'pack:${pack.languageCode}',
+                        enabled: installed || canInstall,
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                recommended
+                                    ? '${pack.languageName} (recommended)'
+                                    : pack.languageName,
+                              ),
+                            ),
+                            if (active)
+                              const Icon(Icons.check_rounded, size: 18)
+                            else if (!installed && !canInstall)
+                              const Icon(Icons.lock_outline, size: 18),
+                          ],
+                        ),
+                      );
+                    }).toList(growable: false);
+                  },
+                ),
+            ],
           ),
           body: !_controller.isReady
               ? const Center(child: CircularProgressIndicator())
@@ -88,61 +151,39 @@ class _HadithLibraryScreenState extends State<HadithLibraryScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
-                    _HeroCard(
-                      hasInstalledPack: _controller.hasInstalledPack,
-                      activePack: _controller.activeInstalledPack,
-                    ),
-                    const SizedBox(height: 12),
-                    if (_controller.shouldShowPackChooser &&
-                        !_dismissedPackChooser) ...<Widget>[
-                      _PackChooserCard(
-                        controller: _controller,
-                        onChooseAnotherLanguage: _showPackPicker,
-                        onNotNow: () {
-                          setState(() {
-                            _dismissedPackChooser = true;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    if (_controller.installedPacks.isNotEmpty) ...<Widget>[
-                      _InstalledPackCard(
-                        controller: _controller,
-                        onChooseAnotherLanguage: _showPackPicker,
-                      ),
-                      const SizedBox(height: 12),
-                    ],
                     _SearchCard(
                       controller: _controller,
                       searchController: _searchController,
+                      sampleQuestions: _sampleQuestions,
+                      onSampleQuestionTap: _useSampleQuestion,
                     ),
                     const SizedBox(height: 12),
-                    if (_controller.isUsingFallbackLanguage)
-                      const _InfoCard(
-                        title: 'Showing fallback results',
-                        message:
-                            'No local-language offline matches were found, so the finder is showing English Sunni Hadith results instead.',
+                    if (_controller.latestAnswer != null &&
+                        _controller.latestAnswer!.status !=
+                            HadithGroundedAnswerStatus.noEvidence) ...<Widget>[
+                      _GroundedAnswerCard(
+                        answer: _controller.latestAnswer!,
+                        primaryCitation: _controller.searchResults.isEmpty
+                            ? null
+                            : _controller.searchResults.first,
                       ),
-                    if (_controller.searchQuery.trim().length >= 2 &&
-                        _controller.searchResults.isEmpty)
-                      _NoResultsCard(controller: _controller),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_controller.latestAnswer?.status ==
+                        HadithGroundedAnswerStatus.noEvidence)
+                      _NoResultsCard(
+                        controller: _controller,
+                        searchController: _searchController,
+                      ),
                     if (_controller.searchResults.isNotEmpty)
-                      ..._controller.searchResults.map(
-                        (HadithFinderResult result) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _FinderResultCard(
-                            result: result,
-                            onTap: () => _openHadithDetail(result.result),
-                          ),
-                        ),
+                      _CitationLinksCard(
+                        results: _controller.searchResults,
+                        onTap: _openHadithDetail,
                       ),
-                    const SizedBox(height: 12),
-                    _ShiaPlaceholderCard(controller: _controller),
-                    const SizedBox(height: 12),
-                    _SourcesCard(controller: _controller),
-                    const SizedBox(height: 12),
-                    const _SafetyFooterCard(),
+                    if (_controller.hasInstalledPack) ...<Widget>[
+                      const SizedBox(height: 12),
+                      _MoreInfoCard(controller: _controller),
+                    ],
                   ],
                 ),
         );
@@ -166,59 +207,13 @@ class _HadithLibraryScreenState extends State<HadithLibraryScreen> {
     );
   }
 
-  Future<void> _showPackPicker() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'Choose a Sunni Hadith pack',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.hasPremiumLanguageAccess
-                      ? 'You can install any HadeethEnc language pack available in this build.'
-                      : 'Your recommended pack stays free. Extra languages are part of Hadith Plus.',
-                ),
-                const SizedBox(height: 16),
-                for (final HadithPackManifest pack
-                    in _controller.availablePacks)
-                  _PackOptionTile(
-                    pack: pack,
-                    isInstalled: _controller.isPackInstalled(pack.languageCode),
-                    isRecommended: _controller.recommendedPack?.languageCode ==
-                        pack.languageCode,
-                    canInstall: _controller.canInstallPack(pack),
-                    hasUpdate:
-                        _controller.isPackUpdateAvailable(pack.languageCode),
-                    onTap: () async {
-                      if (!_controller.canInstallPack(pack)) {
-                        Navigator.of(context).pop();
-                        return;
-                      }
-                      Navigator.of(context).pop();
-                      await _controller.installPack(pack.languageCode);
-                      if (mounted) {
-                        setState(() {
-                          _dismissedPackChooser = false;
-                        });
-                      }
-                    },
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
+  Future<void> _useSampleQuestion(String question) async {
+    _searchController.value = TextEditingValue(
+      text: question,
+      selection: TextSelection.collapsed(offset: question.length),
     );
+    _controller.updateSearchQuery(question);
+    await _controller.submitSearchQuery();
   }
 }
 
@@ -232,383 +227,297 @@ class HadithDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final List<String> narrations = _splitNarrations(detail.hadithText);
+    final String sourceReference = _detailSourceReference(detail);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hadith detail'),
+        title: Text(
+          'Hadith detail',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: <Widget>[
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    detail.title,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+      body: SelectionArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: <Widget>[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      detail.title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      sourceReference,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      [
+                        detail.languageCode.toUpperCase(),
+                        _gradeForDisplay(detail.grade),
+                      ].where((String part) => part.isNotEmpty).join(' • '),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Here’s exactly what the hadith says',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        color: colorScheme.primaryContainer
+                            .withValues(alpha: 0.42),
+                      ),
+                      child: Text(
+                        _firstNarrationSnippet(detail.hadithText),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              height: 1.55,
+                            ),
+                      ),
+                    ),
+                    if (narrations.length > 1) ...<Widget>[
+                      const SizedBox(height: 14),
+                      Text(
+                        'Other narrations',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      for (final (int, String) narration
+                          in narrations.skip(1).indexed)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              color: colorScheme.surfaceContainerLowest,
+                              border: Border.all(
+                                color: colorScheme.outlineVariant,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  'Narration ${narration.$1 + 2}',
+                                  style:
+                                      Theme.of(context).textTheme.labelMedium,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  narration.$2,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(height: 1.5),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'In plain words',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _plainWordsFromDetail(detail),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            height: 1.55,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (detail.explanation.trim().isNotEmpty)
+              Card(
+                child: ExpansionTile(
+                  tilePadding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 2),
+                  childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                  title: const Text('Read the full explanation'),
+                  children: <Widget>[
+                    Text(
+                      detail.explanation.trim(),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            height: 1.6,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            if (detail.benefits.isNotEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Chip(label: Text(detail.languageCode.toUpperCase())),
-                      Chip(label: Text(detail.grade)),
-                      const Chip(label: Text('Sunni Hadith (HadeethEnc)')),
+                      Text(
+                        'Key takeaways',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                      ),
+                      const SizedBox(height: 10),
+                      for (final String benefit in detail.benefits.take(4))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            '• $benefit',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(height: 1.5),
+                          ),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    detail.hadithText,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          Card(
-            child: ListTile(
-              title: const Text('Explanation'),
-              subtitle: Text(detail.explanation),
-            ),
-          ),
-          if (detail.benefits.isNotEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Lessons and benefits',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    for (final String benefit in detail.benefits)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text('• $benefit'),
+            if (detail.hadithArabic.trim().isNotEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Arabic text',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                       ),
-                  ],
-                ),
-              ),
-            ),
-          if (detail.wordsMeaningsArabic.isNotEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Key word meanings',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    for (final String entry in detail.wordsMeaningsArabic)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(entry),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          Card(
-            child: ListTile(
-              title: const Text('Arabic text'),
-              subtitle: Text(
-                detail.hadithArabic,
-                textDirection: TextDirection.rtl,
-              ),
-            ),
-          ),
-          Card(
-            child: ListTile(
-              title: const Text('Source reference'),
-              subtitle: Text(
-                detail.sourceReference.isEmpty
-                    ? 'HadeethEnc.com'
-                    : detail.sourceReference,
-              ),
-            ),
-          ),
-          if (detail.sourceUrl.isNotEmpty)
-            Card(
-              child: ListTile(
-                title: const Text('Original source URL'),
-                subtitle: Text(detail.sourceUrl),
-                trailing: const Icon(Icons.open_in_new),
-                onTap: () => _openSourceUrl(detail.sourceUrl),
-              ),
-            ),
-          const _SafetyFooterCard(),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openSourceUrl(String rawUrl) async {
-    final Uri? uri = Uri.tryParse(rawUrl);
-    if (uri == null) {
-      return;
-    }
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-}
-
-class _HeroCard extends StatelessWidget {
-  const _HeroCard({
-    required this.hasInstalledPack,
-    required this.activePack,
-  });
-
-  final bool hasInstalledPack;
-  final HadithPackInstall? activePack;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[
-            colorScheme.primary.withValues(alpha: 0.95),
-            const Color(0xFF2C8B6C),
-            const Color(0xFF8FAE72),
-          ],
-        ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.18),
-            blurRadius: 26,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'SUNNI HADITH',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.84),
-                    letterSpacing: 1.2,
-                  ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Ask about a use case',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              hasInstalledPack
-                  ? 'Search your installed HadeethEnc pack offline for cited hadith, explanations, and practical match reasons.'
-                  : 'Install one Sunni HadeethEnc language pack first, then search offline by use case instead of browsing categories.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.92),
-                  ),
-            ),
-            if (activePack != null) ...<Widget>[
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: <Widget>[
-                  Chip(
-                    label: Text(
-                      activePack!.languageName,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  Chip(
-                    label: Text('${activePack!.recordCount} hadith'),
-                  ),
-                  Chip(label: Text('v${activePack!.version}')),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PackChooserCard extends StatelessWidget {
-  const _PackChooserCard({
-    required this.controller,
-    required this.onChooseAnotherLanguage,
-    required this.onNotNow,
-  });
-
-  final HadithController controller;
-  final VoidCallback onChooseAnotherLanguage;
-  final VoidCallback onNotNow;
-
-  @override
-  Widget build(BuildContext context) {
-    final HadithPackManifest? recommended = controller.recommendedPack;
-    if (recommended == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'Pick your first Sunni Hadith pack',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Recommended for this phone: ${recommended.languageName}. Download it once to keep Hadith Finder available offline.',
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Theme.of(context).colorScheme.secondaryContainer,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    recommended.languageName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${recommended.recordCount} hadith • ${_formatPackSize(recommended.packSizeBytes)} • HadeethEnc v${recommended.version}',
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    recommended.isStarterFreeEligible
-                        ? 'This starter pack is free, downloaded on demand, and searched fully on-device.'
-                        : 'This pack is downloaded on demand and searched fully on-device.',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: <Widget>[
-                FilledButton(
-                  onPressed: controller.isWorking
-                      ? null
-                      : controller.installRecommendedPack,
-                  child: Text(
-                    'Download ${recommended.languageName}',
-                  ),
-                ),
-                FilledButton.tonal(
-                  onPressed:
-                      controller.isWorking ? null : onChooseAnotherLanguage,
-                  child: const Text('Choose another language'),
-                ),
-                TextButton(
-                  onPressed: onNotNow,
-                  child: const Text('Not now'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InstalledPackCard extends StatelessWidget {
-  const _InstalledPackCard({
-    required this.controller,
-    required this.onChooseAnotherLanguage,
-  });
-
-  final HadithController controller;
-  final VoidCallback onChooseAnotherLanguage;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'Installed Sunni Hadith packs',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: controller.installedPacks.map((HadithPackInstall pack) {
-                final bool isActive =
-                    controller.activeLanguageCode == pack.languageCode;
-                final bool hasUpdate =
-                    controller.isPackUpdateAvailable(pack.languageCode);
-                return ChoiceChip(
-                  label: Text(
-                    hasUpdate
-                        ? '${pack.languageName} • update'
-                        : '${pack.languageName} • ${pack.sourceType}',
-                  ),
-                  selected: isActive,
-                  onSelected: (_) => controller.setActiveLanguageCode(
-                    pack.languageCode,
-                  ),
-                );
-              }).toList(growable: false),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              controller.hasPremiumLanguageAccess
-                  ? 'You can install more language packs any time.'
-                  : 'Your recommended language stays free. Hadith Plus unlocks the extra language packs.',
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: <Widget>[
-                  FilledButton.tonal(
-                    onPressed:
-                        controller.isWorking ? null : onChooseAnotherLanguage,
-                    child: const Text('Manage language packs'),
-                  ),
-                  FilledButton.tonal(
-                    onPressed: controller.isWorking ||
-                            controller.activeInstalledPack == null
-                        ? null
-                        : () => controller.removePack(
-                              controller.activeInstalledPack!.languageCode,
+                      const SizedBox(height: 10),
+                      Text(
+                        detail.hadithArabic.trim(),
+                        textDirection: TextDirection.rtl,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              height: 1.9,
                             ),
-                    child: const Text('Remove active pack'),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+              ),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Verify this source',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      sourceReference,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            height: 1.5,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: <Widget>[
+                        FilledButton.tonalIcon(
+                          onPressed: detail.sourceUrl.isEmpty
+                              ? null
+                              : () => _openExternalSourceUrl(detail.sourceUrl),
+                          icon: const Icon(Icons.open_in_new_rounded),
+                          label: const Text('Open public source'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: detail.sourceUrl.isEmpty
+                              ? null
+                              : () async {
+                                  await Clipboard.setData(
+                                    ClipboardData(text: detail.sourceUrl),
+                                  );
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Source link copied'),
+                                    ),
+                                  );
+                                },
+                          icon: const Icon(Icons.copy_rounded),
+                          label: const Text('Copy link'),
+                        ),
+                      ],
+                    ),
+                    if (detail.sourceUrl.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 10),
+                      SelectableText(
+                        detail.sourceUrl,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
+            const _SafetyFooterCard(),
           ],
         ),
       ),
@@ -620,88 +529,159 @@ class _SearchCard extends StatelessWidget {
   const _SearchCard({
     required this.controller,
     required this.searchController,
+    required this.sampleQuestions,
+    required this.onSampleQuestionTap,
   });
 
   final HadithController controller;
   final TextEditingController searchController;
+  final List<String> sampleQuestions;
+  final Future<void> Function(String question) onSampleQuestionTap;
 
   @override
   Widget build(BuildContext context) {
-    final HadithPackInstall? activePack = controller.activeInstalledPack;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              'Ask about a use case',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              activePack == null
-                  ? 'Install a Sunni Hadith pack first, then describe a topic like caring for parents, honesty in trade, or controlling anger.'
-                  : 'Searching ${activePack.languageName} offline right now. The finder ranks exact text, explanations, benefits, and related terms.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: searchController,
-              enabled: controller.hasInstalledPack,
-              decoration: InputDecoration(
-                labelText: 'Ask about a use case',
-                hintText: 'Try anger, parents, trade, mercy, prayer',
-                border: const OutlineInputBorder(),
-                suffixIcon: controller.searchQuery.isEmpty
-                    ? const Icon(Icons.search)
-                    : IconButton(
-                        onPressed: () {
-                          searchController.clear();
-                          unawaited(controller.updateSearchQuery(''));
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
+            if (!controller.hasInstalledPack) ...<Widget>[
+              Text(
+                'Use the top-right pack menu to install your first Sunni Hadith pack.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
               ),
-              textInputAction: TextInputAction.search,
-              onChanged: controller.updateSearchQuery,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NoResultsCard extends StatelessWidget {
-  const _NoResultsCard({
-    required this.controller,
-  });
-
-  final HadithController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'No offline matches yet',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.suggestedQuery == null
-                  ? 'Try a shorter phrase, a clearer topic, or install another language pack.'
-                  : 'No exact offline match was found. Try the suggested phrase instead.',
-            ),
-            if (controller.suggestedQuery != null) ...<Widget>[
               const SizedBox(height: 12),
-              FilledButton.tonal(
-                onPressed: controller.applySuggestedQuery,
-                child: Text('Did you mean "${controller.suggestedQuery}"?'),
+            ],
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(26),
+                color: colorScheme.surface,
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+                ),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: colorScheme.shadow.withValues(alpha: 0.04),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: <Widget>[
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      Icons.search_rounded,
+                      color: colorScheme.onSurfaceVariant,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: searchController,
+                      enabled: controller.hasInstalledPack,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                      decoration: InputDecoration(
+                        hintText: 'Ask a hadith question',
+                        hintStyle:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 18,
+                        ),
+                        isCollapsed: true,
+                      ),
+                      textInputAction: TextInputAction.search,
+                      onChanged: controller.updateSearchQuery,
+                      onSubmitted: (_) => controller.submitSearchQuery(),
+                    ),
+                  ),
+                  if (controller.searchQuery.isNotEmpty)
+                    IconButton(
+                      onPressed: () {
+                        searchController.clear();
+                        controller.updateSearchQuery('');
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10, left: 4),
+                    child: FilledButton(
+                      onPressed: !controller.hasInstalledPack ||
+                              controller.isWorking ||
+                              controller.searchQuery.trim().length < 2
+                          ? null
+                          : controller.submitSearchQuery,
+                      style: FilledButton.styleFrom(
+                        shape: const CircleBorder(),
+                        padding: const EdgeInsets.all(13),
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                      ),
+                      child: const Icon(Icons.arrow_upward_rounded),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (controller.hasInstalledPack &&
+                controller.latestAnswer == null &&
+                controller.searchQuery.trim().isEmpty) ...<Widget>[
+              const SizedBox(height: 10),
+              Text(
+                'Try one',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 40,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: sampleQuestions.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (BuildContext context, int index) {
+                    final String question = sampleQuestions[index];
+                    return ActionChip(
+                      label: Text(question),
+                      visualDensity: VisualDensity.compact,
+                      onPressed:
+                          controller.isWorking || !controller.hasInstalledPack
+                              ? null
+                              : () => unawaited(onSampleQuestionTap(question)),
+                    );
+                  },
+                ),
+              ),
+            ],
+            if (controller.isWorking) ...<Widget>[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  minHeight: 4,
+                  color: colorScheme.primary,
+                ),
               ),
             ],
           ],
@@ -711,66 +691,354 @@ class _NoResultsCard extends StatelessWidget {
   }
 }
 
-class _FinderResultCard extends StatelessWidget {
-  const _FinderResultCard({
-    required this.result,
+class _GroundedAnswerCard extends StatelessWidget {
+  const _GroundedAnswerCard({
+    required this.answer,
+    required this.primaryCitation,
+  });
+
+  final HadithGroundedAnswer answer;
+  final HadithFinderResult? primaryCitation;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final bool isDirect = answer.status == HadithGroundedAnswerStatus.answered;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              isDirect
+                  ? 'Here’s exactly what the hadith says'
+                  : 'Closest related hadith',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: isDirect
+                    ? colorScheme.primaryContainer.withValues(alpha: 0.42)
+                    : colorScheme.secondaryContainer.withValues(alpha: 0.42),
+              ),
+              child: Text(
+                _hadithSaysText(primaryCitation, answer),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.45,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'In plain words',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _plainWordsText(primaryCitation, answer),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+            ),
+            if (answer.usedLanguageFallback) ...<Widget>[
+              const SizedBox(height: 10),
+              Text(
+                'Using the installed English fallback pack for this answer.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _hadithSaysText(
+    HadithFinderResult? primary,
+    HadithGroundedAnswer answer,
+  ) {
+    final String text = primary?.result.hadithText.trim() ?? answer.answerText;
+    return _firstNarrationSnippet(text);
+  }
+
+  String _plainWordsText(
+    HadithFinderResult? primary,
+    HadithGroundedAnswer answer,
+  ) {
+    if (answer.status == HadithGroundedAnswerStatus.related) {
+      return 'I could not find a direct hadith for this exact question, but the references below are the closest matches I found.';
+    }
+    final String explanation = primary?.result.explanation.trim() ?? '';
+    final String simplified = _simplifyExplanation(explanation);
+    if (simplified.isNotEmpty) {
+      return simplified;
+    }
+    return _clipText(answer.answerText.trim(), 180);
+  }
+}
+
+class _NoResultsCard extends StatelessWidget {
+  const _NoResultsCard({
+    required this.controller,
+    required this.searchController,
+  });
+
+  final HadithController controller;
+  final TextEditingController searchController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'No clear hadith found',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'I could not find a reliable hadith in the installed packs that directly answers this question.',
+            ),
+            if (controller.suggestedQuery != null) ...<Widget>[
+              const SizedBox(height: 12),
+              FilledButton.tonal(
+                onPressed: () {
+                  final String nextQuery = controller.suggestedQuery!;
+                  searchController.value = TextEditingValue(
+                    text: nextQuery,
+                    selection:
+                        TextSelection.collapsed(offset: nextQuery.length),
+                  );
+                  unawaited(controller.applySuggestedQuery());
+                },
+                child: Text('Try "${controller.suggestedQuery}"'),
+              ),
+            ] else ...<Widget>[
+              const SizedBox(height: 8),
+              const Text(
+                'Try a clearer topic phrase, another pack, or a qualified scholar for a context-specific answer.',
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CitationLinksCard extends StatelessWidget {
+  const _CitationLinksCard({
+    required this.results,
     required this.onTap,
   });
 
+  final List<HadithFinderResult> results;
+  final Future<void> Function(HadithSearchResult result) onTap;
+
+  static const double _minimumVisibleConfidence = 0.42;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<HadithFinderResult> visibleResults = results
+        .where(
+          (HadithFinderResult result) =>
+              result.confidence >= _minimumVisibleConfidence,
+        )
+        .take(3)
+        .toList(growable: false);
+    final List<HadithFinderResult> rankedResults = visibleResults.isEmpty
+        ? results.take(1).toList(growable: false)
+        : visibleResults;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Top ${rankedResults.length} most relevant hadith',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Only showing matches at about 42% confidence or higher.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            for (final (int, HadithFinderResult) entry
+                in rankedResults.indexed) ...<Widget>[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _CitationLinkTile(
+                  index: entry.$1 + 1,
+                  result: entry.$2,
+                  isPrimary: entry.$1 == 0,
+                  onTap: () => onTap(entry.$2.result),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CitationLinkTile extends StatelessWidget {
+  const _CitationLinkTile({
+    required this.index,
+    required this.result,
+    required this.isPrimary,
+    required this.onTap,
+  });
+
+  final int index;
   final HadithFinderResult result;
+  final bool isPrimary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     final HadithSearchResult data = result.result;
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(28),
-        onTap: onTap,
+    final String title =
+        data.title.trim().isEmpty ? 'Hadith source $index' : data.title.trim();
+    final String snippet = _clipText(
+      _firstNarrationSnippet(data.hadithText),
+      120,
+    );
+    final int confidencePercent = (result.confidence * 100).round();
+    final List<String> metadata = <String>[
+      if (isPrimary) 'Most relevant',
+      _visibleSourceReference(data),
+      if (_gradeForDisplay(data.grade).isNotEmpty) _gradeForDisplay(data.grade),
+      data.languageCode.toUpperCase(),
+    ]..removeWhere((String part) => part.isEmpty);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: colorScheme.surfaceContainerLowest,
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.85),
+          ),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
+          padding: const EdgeInsets.all(14),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                data.title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: <Widget>[
-                  Chip(label: Text(data.languageCode.toUpperCase())),
-                  Chip(label: Text(data.grade)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                data.hadithText,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (data.matchReasons.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 12),
-                Text(
-                  'Why this matched',
-                  style: Theme.of(context).textTheme.labelLarge,
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(height: 6),
-                for (final String reason in data.matchReasons.take(3))
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text('• $reason'),
-                  ),
-              ],
-              if (data.sourceReference.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 10),
-                Text(
-                  data.sourceReference,
-                  style: Theme.of(context).textTheme.bodySmall,
+                alignment: Alignment.center,
+                child: Text(
+                  '$index',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            metadata.join(' • '),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Text(
+                            '$confidencePercent%',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      snippet,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            height: 1.45,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              if (data.sourceUrl.trim().isNotEmpty)
+                IconButton(
+                  tooltip: 'Open public source',
+                  onPressed: () => _openExternalSourceUrl(data.sourceUrl),
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  color: colorScheme.onSurfaceVariant,
+                ),
             ],
           ),
         ),
@@ -779,32 +1047,8 @@ class _FinderResultCard extends StatelessWidget {
   }
 }
 
-class _ShiaPlaceholderCard extends StatelessWidget {
-  const _ShiaPlaceholderCard({
-    required this.controller,
-  });
-
-  final HadithController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final ShiaHadithPackAvailability? availability =
-        controller.shiaAvailability;
-    return Card(
-      child: ListTile(
-        title: const Text('Shia Hadith pack'),
-        subtitle: Text(
-          availability?.message ??
-              'Shia Hadith Pack is coming. It depends on licensed content.',
-        ),
-        trailing: const Chip(label: Text('Coming soon')),
-      ),
-    );
-  }
-}
-
-class _SourcesCard extends StatelessWidget {
-  const _SourcesCard({
+class _MoreInfoCard extends StatelessWidget {
+  const _MoreInfoCard({
     required this.controller,
   });
 
@@ -813,34 +1057,37 @@ class _SourcesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'Sources and pack versions',
-              style: Theme.of(context).textTheme.titleMedium,
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 2),
+        childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+        title: const Text('Sources & safety'),
+        children: <Widget>[
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Hadith Finder uses official HadeethEnc packs stored verbatim on-device and searched offline.',
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Sunni Hadith Finder uses official HadeethEnc language packs stored verbatim on-device. Packs are downloaded remotely, validated locally, and searched without model-generated answer text.',
-            ),
-            const SizedBox(height: 12),
-            if (controller.sourceVersions.isEmpty)
-              const Text(
-                  'No Hadith packs have been installed on this device yet.')
-            else
-              for (final SourceVersion version in controller.sourceVersions)
-                _HadithSourceVersionCard(
-                  version: version,
-                  install: _matchingInstall(
-                    controller.installedPacks,
-                    version.languageCode,
-                  ),
+          ),
+          const SizedBox(height: 12),
+          if (controller.sourceVersions.isEmpty)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'No Hadith packs have been installed on this device yet.',
+              ),
+            )
+          else
+            for (final SourceVersion version in controller.sourceVersions)
+              _HadithSourceVersionCard(
+                version: version,
+                install: _matchingInstall(
+                  controller.installedPacks,
+                  version.languageCode,
                 ),
-          ],
-        ),
+              ),
+          const SizedBox(height: 6),
+          const _SafetyFooterCard(compact: true),
+        ],
       ),
     );
   }
@@ -894,6 +1141,10 @@ class _HadithSourceVersionCard extends StatelessWidget {
           Text('Content key: ${version.contentKey}'),
           const SizedBox(height: 4),
           Text('Attribution: ${version.attribution}'),
+          if (_publicSourceUrlForVersion(version).isNotEmpty) ...<Widget>[
+            const SizedBox(height: 4),
+            Text('Public source: ${_publicSourceUrlForVersion(version)}'),
+          ],
           if (install != null) ...<Widget>[
             const SizedBox(height: 4),
             Text('Delivery: ${install!.sourceType} pack'),
@@ -919,57 +1170,30 @@ class _HadithSourceVersionCard extends StatelessWidget {
 }
 
 class _SafetyFooterCard extends StatelessWidget {
-  const _SafetyFooterCard();
+  const _SafetyFooterCard({
+    this.compact = false,
+  });
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    if (compact) {
+      return const ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text('Safety'),
+        subtitle: Text(
+          'This is a reference tool, not a fatwa service.',
+        ),
+      );
+    }
     return Card(
       child: ListTile(
         title: const Text('Safety'),
         subtitle: const Text(
-          'This finder shows cited hadith and explanations. It is not a fatwa service. For context-heavy questions, ask a qualified scholar.',
+          'This finder shows cited hadith and explanations. It is not a fatwa service.',
         ),
       ),
-    );
-  }
-}
-
-class _PackOptionTile extends StatelessWidget {
-  const _PackOptionTile({
-    required this.pack,
-    required this.isInstalled,
-    required this.isRecommended,
-    required this.canInstall,
-    required this.hasUpdate,
-    required this.onTap,
-  });
-
-  final HadithPackManifest pack;
-  final bool isInstalled;
-  final bool isRecommended;
-  final bool canInstall;
-  final bool hasUpdate;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(pack.languageName),
-      subtitle: Text(
-        '${pack.recordCount} hadith • ${_formatPackSize(pack.packSizeBytes)} • v${pack.version}${pack.requiredEntitlementKey == null ? '' : ' • Hadith Plus'}',
-      ),
-      trailing: Wrap(
-        spacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: <Widget>[
-          if (isRecommended) const Chip(label: Text('Recommended')),
-          if (hasUpdate) const Chip(label: Text('Update')),
-          if (!canInstall) const Icon(Icons.lock_outline),
-          if (isInstalled) const Icon(Icons.check_circle_outline),
-        ],
-      ),
-      onTap: onTap,
     );
   }
 }
@@ -997,31 +1221,6 @@ class _MessageCard extends StatelessWidget {
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.title,
-    required this.message,
-  });
-
-  final String title;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        subtitle: Text(message),
-      ),
-    );
-  }
-}
-
-String _formatPackSize(int bytes) {
-  final double mb = bytes / (1024 * 1024);
-  return '${mb.toStringAsFixed(1)} MB';
-}
-
 String _formatDate(DateTime dateTime) {
   final DateTime local = dateTime.toLocal();
   final String month = local.month.toString().padLeft(2, '0');
@@ -1029,4 +1228,198 @@ String _formatDate(DateTime dateTime) {
   final String hour = local.hour.toString().padLeft(2, '0');
   final String minute = local.minute.toString().padLeft(2, '0');
   return '${local.year}-$month-$day $hour:$minute';
+}
+
+String _publicSourceUrlForVersion(SourceVersion version) {
+  if (version.providerKey.toLowerCase() == 'hadeethenc') {
+    return 'https://hadeethenc.com/${version.languageCode}/home';
+  }
+  return '';
+}
+
+Future<void> _openExternalSourceUrl(String rawUrl) async {
+  final Uri? uri = Uri.tryParse(rawUrl);
+  if (uri == null) {
+    return;
+  }
+  await launchUrl(uri, mode: LaunchMode.externalApplication);
+}
+
+List<String> _splitNarrations(String text) {
+  final String cleaned = text.trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (cleaned.isEmpty) {
+    return const <String>[];
+  }
+  final List<String> pieces = cleaned
+      .split(RegExp(r'Another narration reads:\s*', caseSensitive: false))
+      .map((String piece) => piece.trim())
+      .where((String piece) => piece.isNotEmpty)
+      .toList(growable: false);
+  return pieces.isEmpty ? <String>[cleaned] : pieces;
+}
+
+String _firstNarrationSnippet(String text) {
+  final List<String> narrations = _splitNarrations(text);
+  if (narrations.isEmpty) {
+    return '';
+  }
+  return _clipText(narrations.first, 220);
+}
+
+String _plainWordsFromDetail(HadithDetail detail) {
+  if (detail.benefits.isNotEmpty) {
+    return _clipText(detail.benefits.first.trim(), 180);
+  }
+  final String simplified = _simplifyExplanation(detail.explanation);
+  if (simplified.isNotEmpty) {
+    return simplified;
+  }
+  return _firstNarrationSnippet(detail.hadithText);
+}
+
+String _simplifyExplanation(String explanation) {
+  final String cleaned =
+      explanation.replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (cleaned.isEmpty) {
+    return '';
+  }
+
+  final List<String> sentences = cleaned
+      .split(RegExp(r'(?<=[.!?])\s+'))
+      .map((String sentence) => _rewriteExplanationSentence(sentence))
+      .where((String sentence) => sentence.isNotEmpty)
+      .toList(growable: false);
+
+  if (sentences.isEmpty) {
+    return _clipText(cleaned, 180);
+  }
+
+  final StringBuffer summary = StringBuffer();
+  for (final String sentence in sentences) {
+    final String next =
+        summary.isEmpty ? sentence : '${summary.toString()} $sentence';
+    if (next.length > 200) {
+      break;
+    }
+    if (summary.isNotEmpty) {
+      summary.write(' ');
+    }
+    summary.write(sentence);
+    if (summary.length >= 150) {
+      break;
+    }
+  }
+  return _clipText(summary.toString().trim(), 200);
+}
+
+String _rewriteExplanationSentence(String sentence) {
+  String text = sentence
+      .replaceAll(RegExp(r'\(may Allah[^)]*\)', caseSensitive: false), '')
+      .replaceAll('(ﷺ)', '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+  if (text.isEmpty) {
+    return '';
+  }
+
+  if (text.startsWith('To clarify,') ||
+      text.startsWith('In other words,') ||
+      text.startsWith('Likewise,')) {
+    return '';
+  }
+
+  text = text.replaceFirst(
+    RegExp(r'^[A-Z][^.]{0,140}? conveys a message regarding '),
+    'This hadith is about ',
+  );
+  text = text.replaceFirst(
+    RegExp(r'^[A-Z][^.]{0,140}? highlights '),
+    'This hadith teaches ',
+  );
+  text = text.replaceFirst(
+    RegExp(r'^[A-Z][^.]{0,160}? reported that the Prophet[^.]*? that '),
+    'It teaches that ',
+  );
+  text = text.replaceFirst(
+    RegExp(r'^This Had[īi]th indicates that ', caseSensitive: false),
+    'This hadith teaches that ',
+  );
+  text = text.replaceAll('  ', ' ').trim();
+
+  if (_looksTooTechnical(text)) {
+    return '';
+  }
+  return _clipText(_ensureSentence(text), 170);
+}
+
+bool _looksTooTechnical(String value) {
+  final String normalized = value.toLowerCase();
+  return normalized.contains('communal duty') ||
+      normalized.contains('polytheism') ||
+      normalized.contains('companions never practiced') ||
+      normalized.contains('based on religious texts');
+}
+
+String _clipText(String value, int maxLength) {
+  final String trimmed = value.trim();
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+  return '${trimmed.substring(0, maxLength - 1).trim()}…';
+}
+
+String _visibleSourceReference(HadithSearchResult data) {
+  if (data.sourceReference.trim().isNotEmpty) {
+    return _stripBrackets(data.sourceReference);
+  }
+  final String fromGrade = _sourceReferenceFromGrade(data.grade);
+  if (fromGrade.isNotEmpty) {
+    return fromGrade;
+  }
+  return 'HadeethEnc';
+}
+
+String _detailSourceReference(HadithDetail detail) {
+  if (detail.sourceReference.trim().isNotEmpty) {
+    return _stripBrackets(detail.sourceReference);
+  }
+  final String fromGrade = _sourceReferenceFromGrade(detail.grade);
+  if (fromGrade.isNotEmpty) {
+    return fromGrade;
+  }
+  return 'HadeethEnc';
+}
+
+String _sourceReferenceFromGrade(String grade) {
+  final String cleaned = _stripBrackets(grade);
+  final String normalized = cleaned.toLowerCase();
+  if (normalized.contains('narrated by') ||
+      normalized.contains('reported by') ||
+      normalized.contains('bukhari') ||
+      normalized.contains('muslim') ||
+      normalized.contains('tirmidhi') ||
+      normalized.contains('abu dawud') ||
+      normalized.contains('ibn majah') ||
+      normalized.contains('ahmad')) {
+    return cleaned;
+  }
+  return '';
+}
+
+String _gradeForDisplay(String grade) {
+  return _stripBrackets(grade);
+}
+
+String _stripBrackets(String value) {
+  return value.trim().replaceAll(RegExp(r'^\[|\]$'), '');
+}
+
+String _ensureSentence(String value) {
+  if (value.isEmpty) {
+    return value;
+  }
+  if (value.endsWith('.') || value.endsWith('!') || value.endsWith('?')) {
+    return value;
+  }
+  return '$value.';
 }

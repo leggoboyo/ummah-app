@@ -21,6 +21,7 @@ void main() {
         revenueCatIosPublicSdkKey: '',
       ),
       profile: profile,
+      uiPerformanceMode: UiPerformanceMode.standard,
       entitlements: const <AppEntitlement>{AppEntitlement.coreFree},
       billingProviderKind: BillingProviderKind.revenueCat,
       billingAvailability: BillingAvailability.unavailable,

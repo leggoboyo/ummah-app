@@ -27,6 +27,16 @@ The repository now contains:
 
 The machine now has Flutter, Android tooling, Xcode, CocoaPods, and an iOS Simulator runtime installed. `flutter doctor -v` is clean, the workspace bootstraps successfully, `flutter analyze` passes across packages, and the current test suite passes.
 
+## Public Transparency Site
+
+The repo also contains a lightweight public-facing static site in [`website`](/Users/zohaibkhawaja/Documents/Codex/ummah-app/website) meant to explain the app's mission, offline-first posture, source transparency, and architecture in a founder-readable way.
+
+To preview it locally, run:
+
+```bash
+make site-preview
+```
+
 ## Next Recommended Step
 
 To validate the workspace locally, run:

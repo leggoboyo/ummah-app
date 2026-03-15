@@ -30,6 +30,7 @@ class HadithController extends ChangeNotifier {
   String? errorMessage;
   String? statusMessage;
   String? suggestedQuery;
+  HadithGroundedAnswer? latestAnswer;
 
   String _preferredLanguageCode = 'en';
   String _activeLanguageCode = 'en';
@@ -52,8 +53,10 @@ class HadithController extends ChangeNotifier {
 
   bool get shouldShowPackChooser => !hasInstalledPack;
 
-  bool get isUsingFallbackLanguage => searchResults
-      .any((HadithFinderResult result) => result.usedLanguageFallback);
+  bool get isUsingFallbackLanguage =>
+      searchResults
+          .any((HadithFinderResult result) => result.usedLanguageFallback) ||
+      (latestAnswer?.usedLanguageFallback ?? false);
 
   HadithPackManifest? get recommendedPack {
     final String canonicalPreferred =
@@ -231,12 +234,25 @@ class HadithController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateSearchQuery(String value) async {
+  void updateSearchQuery(String value) {
     _searchQuery = value;
     errorMessage = null;
     statusMessage = null;
-    await _refreshSearch();
+    if (value.trim().isEmpty ||
+        (latestAnswer != null && value.trim() != latestAnswer!.query.trim())) {
+      searchResults = const <HadithFinderResult>[];
+      suggestedQuery = null;
+      latestAnswer = null;
+    }
     notifyListeners();
+  }
+
+  Future<void> submitSearchQuery() async {
+    await _runBusy(() async {
+      statusMessage = null;
+      errorMessage = null;
+      await _refreshSearch();
+    });
   }
 
   Future<void> applySuggestedQuery() async {
@@ -246,8 +262,7 @@ class HadithController extends ChangeNotifier {
     }
     _searchQuery = nextQuery;
     suggestedQuery = null;
-    await _refreshSearch();
-    notifyListeners();
+    await submitSearchQuery();
   }
 
   Future<HadithDetail?> loadHadithDetail({
@@ -265,20 +280,22 @@ class HadithController extends ChangeNotifier {
     if (trimmed.length < 2) {
       searchResults = const <HadithFinderResult>[];
       suggestedQuery = null;
+      latestAnswer = null;
       return;
     }
     if (!hasInstalledPack) {
       searchResults = const <HadithFinderResult>[];
       suggestedQuery = null;
+      latestAnswer = null;
       return;
     }
 
-    searchResults = await _repository.findForUseCase(
+    latestAnswer = await _repository.answerQuestion(
       query: trimmed,
       preferredLanguageCode: _activeLanguageCode,
-      limit: 24,
     );
-    if (searchResults.isEmpty) {
+    searchResults = latestAnswer?.citations ?? const <HadithFinderResult>[];
+    if (latestAnswer?.status == HadithGroundedAnswerStatus.noEvidence) {
       suggestedQuery = await _repository.suggestQuery(
         query: trimmed,
         preferredLanguageCode: _activeLanguageCode,

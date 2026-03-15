@@ -10,4 +10,5 @@ export 'src/models/fiqh_profile.dart';
 export 'src/models/pack_catalog.dart';
 export 'src/models/retrieved_passage.dart';
 export 'src/models/source_version.dart';
+export 'src/models/ui_performance_mode.dart';
 export 'src/settings/storage_ports.dart';

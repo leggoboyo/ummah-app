@@ -46,6 +46,27 @@ worker-deploy:
 cost-report:
 	python3 scripts/estimate_cloudflare_costs.py
 
+android-smoke:
+	./scripts/android_smoke_test.sh
+
+android-low-end-avd:
+	./scripts/create_low_end_android_avd.sh
+
+build-android-debug:
+	cd mobile/app && flutter build apk --debug
+
+build-android-release:
+	cd mobile/app && flutter build apk --release
+
+build-android-split:
+	cd mobile/app && flutter build apk --release --split-per-abi
+
+build-android-aab:
+	cd mobile/app && flutter build appbundle --release
+
+site-preview:
+	python3 -m http.server 4173 --directory website
+
 quality: bootstrap format-check pack-platform-check analyze test worker-test
 
 pack-platform-check: feature-boundary-check secret-file-check validate-packs generate-sources

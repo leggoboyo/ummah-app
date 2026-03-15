@@ -12,6 +12,7 @@ class AppSupportReportBuilder {
   Future<String> build({
     required AppEnvironment environment,
     required AppProfile profile,
+    required UiPerformanceMode uiPerformanceMode,
     required Set<AppEntitlement> entitlements,
     required BillingProviderKind billingProviderKind,
     required BillingAvailability billingAvailability,
@@ -46,6 +47,7 @@ class AppSupportReportBuilder {
       'Wi-Fi only downloads: ${profile.startupSelection.wifiOnlyDownloads}',
       'Storage saver mode: ${profile.startupSelection.storageSaverMode}',
       'Analytics SDK active: false',
+      'UI performance mode: ${uiPerformanceMode.name}',
       'Adhan sound: ${profile.adhanSoundKey}',
       'Billing provider: ${billingProviderKind.label}',
       'Billing availability: ${billingAvailability.label}',

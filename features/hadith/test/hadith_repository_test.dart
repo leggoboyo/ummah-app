@@ -92,6 +92,232 @@ void main() {
     expect(versions.single.contentKey, 'sunni_pack_en');
   });
 
+  test('builds a grounded direct answer when local evidence is strong',
+      () async {
+    final _PackFixture fixture = _PackFixture.singleLanguage(
+      languageCode: 'en',
+      languageName: 'English',
+      version: '1.0.0',
+      records: <Map<String, Object?>>[
+        <String, Object?>{
+          'id': 111,
+          'title': 'Kindness to parents',
+          'title_arabic': 'بر الوالدين',
+          'hadith_text':
+              'The pleasure of the Lord lies in the pleasure of the parents.',
+          'hadith_text_arabic': 'رضا الرب في رضا الوالدين',
+          'explanation':
+              'This hadith highlights caring for parents with mercy and obedience.',
+          'explanation_arabic': 'يدل الحديث على البر والرحمة بالوالدين.',
+          'benefits': <String>['Mercy toward parents is a major virtue.'],
+          'benefits_arabic': <String>['الرحمة بالوالدين من اعظم الفضائل.'],
+          'words_meanings_arabic': <String>[],
+          'grade': 'Authentic',
+          'grade_arabic': 'صحيح',
+          'source_reference': 'Reported by al-Tirmidhi',
+          'source_reference_arabic': 'رواه الترمذي',
+          'source_url': 'https://example.test/hadith/111',
+        },
+      ],
+    );
+    final HadithRepository repository = HadithRepository(
+      database: database,
+      assetBundle: fixture.assetBundle,
+    );
+
+    await repository.initialize();
+    await repository.installBundledPack(languageCode: 'en');
+
+    final HadithGroundedAnswer answer = await repository.answerQuestion(
+      query: 'How should I treat my parents with mercy?',
+      preferredLanguageCode: 'en',
+    );
+
+    expect(answer.status, HadithGroundedAnswerStatus.answered);
+    expect(answer.answerText.toLowerCase(), contains('parents'));
+    expect(answer.citations, isNotEmpty);
+    expect(answer.citations.first.result.id, 111);
+  });
+
+  test('uses source reference when placeholder metadata would show as title',
+      () async {
+    final _PackFixture fixture = _PackFixture.singleLanguage(
+      languageCode: 'en',
+      languageName: 'English',
+      version: '1.0.0',
+      records: <Map<String, Object?>>[
+        <String, Object?>{
+          'id': 151,
+          'title': 'en',
+          'title_arabic': 'en',
+          'hadith_text': 'Treat women kindly and with respect.',
+          'hadith_text_arabic': 'استوصوا بالنساء خيراً',
+          'explanation': 'This hadith teaches good treatment and mercy.',
+          'explanation_arabic': 'فيه الحث على الرفق والإحسان.',
+          'benefits': <String>['Good treatment is a prophetic ethic.'],
+          'benefits_arabic': <String>['الإحسان خلق نبوي.'],
+          'words_meanings_arabic': <String>[],
+          'grade': 'Authentic',
+          'grade_arabic': 'صحيح',
+          'source_reference': 'Narrated by al-Bukhari and Muslim',
+          'source_reference_arabic': 'رواه البخاري ومسلم',
+          'source_url': 'https://example.test/hadith/151',
+        },
+      ],
+    );
+    final HadithRepository repository = HadithRepository(
+      database: database,
+      assetBundle: fixture.assetBundle,
+    );
+
+    await repository.initialize();
+    await repository.installBundledPack(languageCode: 'en');
+
+    final List<HadithFinderResult> results = await repository.findForUseCase(
+      query: 'How should I treat women kindly?',
+      preferredLanguageCode: 'en',
+    );
+
+    expect(results, isNotEmpty);
+    expect(results.first.result.title, 'Narrated by al-Bukhari and Muslim');
+  });
+
+  test('filters non-English benefits from English detail takeaways', () async {
+    final _PackFixture fixture = _PackFixture.singleLanguage(
+      languageCode: 'en',
+      languageName: 'English',
+      version: '1.0.0',
+      records: <Map<String, Object?>>[
+        <String, Object?>{
+          'id': 161,
+          'title': 'Kindness',
+          'title_arabic': 'الرفق',
+          'hadith_text': 'Allah loves gentleness in every matter.',
+          'hadith_text_arabic': 'إن الله يحب الرفق في الأمر كله',
+          'explanation': 'This hadith praises gentleness and kindness.',
+          'explanation_arabic': 'فيه فضل الرفق.',
+          'benefits': <String>[
+            'Gentleness is beloved to Allah.',
+            'صحیح',
+          ],
+          'benefits_arabic': <String>['الرفق محبوب إلى الله.'],
+          'words_meanings_arabic': <String>[],
+          'grade': 'Authentic',
+          'grade_arabic': 'صحيح',
+          'source_reference': 'Narrated by Muslim',
+          'source_reference_arabic': 'رواه مسلم',
+          'source_url': 'https://example.test/hadith/161',
+        },
+      ],
+    );
+    final HadithRepository repository = HadithRepository(
+      database: database,
+      assetBundle: fixture.assetBundle,
+    );
+
+    await repository.initialize();
+    await repository.installBundledPack(languageCode: 'en');
+
+    final HadithDetail? detail = await repository.getHadithDetail(
+      languageCode: 'en',
+      hadithId: 161,
+    );
+
+    expect(detail, isNotNull);
+    expect(detail!.benefits, contains('Gentleness is beloved to Allah.'));
+    expect(
+        detail.benefits.any((String value) => value.contains('صحیح')), isFalse);
+  });
+
+  test('falls back to related evidence instead of pretending to answer',
+      () async {
+    final _PackFixture fixture = _PackFixture.singleLanguage(
+      languageCode: 'en',
+      languageName: 'English',
+      version: '1.0.0',
+      records: <Map<String, Object?>>[
+        <String, Object?>{
+          'id': 211,
+          'title': 'Controlling anger',
+          'title_arabic': 'كظم الغيظ',
+          'hadith_text': 'Do not become angry, and paradise will be yours.',
+          'hadith_text_arabic': 'لا تغضب ولك الجنة',
+          'explanation': 'This hadith teaches restraint when anger rises.',
+          'explanation_arabic': 'فيه الحث على كظم الغيظ.',
+          'benefits': <String>['Restraint in anger is praiseworthy.'],
+          'benefits_arabic': <String>['كظم الغيظ منقبة عظيمة.'],
+          'words_meanings_arabic': <String>[],
+          'grade': 'Authentic',
+          'grade_arabic': 'صحيح',
+          'source_reference': 'Reported by al-Tabarani',
+          'source_reference_arabic': 'رواه الطبراني',
+          'source_url': 'https://example.test/hadith/211',
+        },
+      ],
+    );
+    final HadithRepository repository = HadithRepository(
+      database: database,
+      assetBundle: fixture.assetBundle,
+    );
+
+    await repository.initialize();
+    await repository.installBundledPack(languageCode: 'en');
+
+    final HadithGroundedAnswer answer = await repository.answerQuestion(
+      query: 'How do I handle anger toward my teacher?',
+      preferredLanguageCode: 'en',
+    );
+
+    expect(answer.status, HadithGroundedAnswerStatus.related);
+    expect(answer.answerText, contains('could not find a clear direct hadith'));
+    expect(answer.citations, isNotEmpty);
+    expect(answer.citations.first.result.id, 211);
+  });
+
+  test('refuses cleanly when no reliable hadith covers the question', () async {
+    final _PackFixture fixture = _PackFixture.singleLanguage(
+      languageCode: 'en',
+      languageName: 'English',
+      version: '1.0.0',
+      records: <Map<String, Object?>>[
+        <String, Object?>{
+          'id': 311,
+          'title': 'Mercy between believers',
+          'title_arabic': 'الرحمة بين المؤمنين',
+          'hadith_text': 'The merciful are shown mercy by the Most Merciful.',
+          'hadith_text_arabic': 'الراحمون يرحمهم الرحمن',
+          'explanation':
+              'This hadith encourages mercy, compassion, and kindness.',
+          'explanation_arabic': 'فيه الحث على الرحمة والرفق.',
+          'benefits': <String>['Mercy is beloved to Allah.'],
+          'benefits_arabic': <String>['الرحمة محبوبة الى الله.'],
+          'words_meanings_arabic': <String>[],
+          'grade': 'Authentic',
+          'grade_arabic': 'صحيح',
+          'source_reference': 'Reported by Abu Dawud',
+          'source_reference_arabic': 'رواه ابو داود',
+          'source_url': 'https://example.test/hadith/311',
+        },
+      ],
+    );
+    final HadithRepository repository = HadithRepository(
+      database: database,
+      assetBundle: fixture.assetBundle,
+    );
+
+    await repository.initialize();
+    await repository.installBundledPack(languageCode: 'en');
+
+    final HadithGroundedAnswer answer = await repository.answerQuestion(
+      query: 'What hadith talks about report cards and homework deadlines?',
+      preferredLanguageCode: 'en',
+    );
+
+    expect(answer.status, HadithGroundedAnswerStatus.noEvidence);
+    expect(answer.citations, isEmpty);
+    expect(answer.answerText, contains('could not find a reliable hadith'));
+  });
+
   test(
       'suggests typo-corrected phrases from the local deterministic vocabulary',
       () async {
@@ -174,6 +400,60 @@ void main() {
       () => repository.installBundledPack(languageCode: 'en'),
       throwsA(isA<StateError>()),
     );
+  });
+
+  test('sanitizes placeholder source metadata for English packs', () async {
+    final _PackFixture fixture = _PackFixture.singleLanguage(
+      languageCode: 'en',
+      languageName: 'English',
+      version: '1.0.0',
+      records: <Map<String, Object?>>[
+        <String, Object?>{
+          'id': 333,
+          'title': 'en',
+          'title_arabic': 'عنوان',
+          'hadith_text':
+              'Let no judge pass judgment between two people while being angry.',
+          'hadith_text_arabic': 'لا يقضين حكم بين اثنين وهو غضبان',
+          'explanation':
+              'This hadith teaches restraint and fairness while judging.',
+          'explanation_arabic': 'فيه النهي عن الحكم حال الغضب.',
+          'benefits': <String>['صحيح', 'Judgment should be made calmly.'],
+          'benefits_arabic': <String>['صحيح'],
+          'words_meanings_arabic': <String>[],
+          'grade': '[Narrated by Bukhari]',
+          'grade_arabic': 'صحيح',
+          'source_reference': 'en',
+          'source_reference_arabic': 'رواه البخاري',
+          'source_url': '',
+        },
+      ],
+    );
+    final HadithRepository repository = HadithRepository(
+      database: database,
+      assetBundle: fixture.assetBundle,
+    );
+
+    await repository.initialize();
+    await repository.installBundledPack(languageCode: 'en');
+
+    final HadithDetail? detail = await repository.getHadithDetail(
+      languageCode: 'en',
+      hadithId: 333,
+    );
+    final List<HadithFinderResult> results = await repository.findForUseCase(
+      query: 'judge while angry',
+      preferredLanguageCode: 'en',
+    );
+
+    expect(detail, isNotNull);
+    expect(detail!.title, isNot('en'));
+    expect(detail.sourceReference, isEmpty);
+    expect(detail.sourceUrl, 'https://hadeethenc.com/en/browse/hadith/333');
+    expect(detail.benefits, <String>['Judgment should be made calmly.']);
+    expect(results.first.result.title, isNot('en'));
+    expect(results.first.result.sourceUrl,
+        'https://hadeethenc.com/en/browse/hadith/333');
   });
 
   test('reports update availability when the bundled manifest version changes',

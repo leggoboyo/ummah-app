@@ -25,11 +25,18 @@ jobs:
           dart pub get
           dart run melos bootstrap
 
-      - name: Build Android App Bundle
+      - name: Build Android release artifacts
         working-directory: mobile/app
-        run: flutter build appbundle --dart-define-from-file=env/staging.json
+        run: |
+          flutter build apk --release --dart-define-from-file=env/staging.json
+          flutter build apk --release --split-per-abi --dart-define-from-file=env/staging.json
+          flutter build appbundle --dart-define-from-file=env/staging.json
 
       - name: Report build sizes
+        env:
+          MAX_AAB_BYTES: 60000000
+          MAX_ARMV7_APK_BYTES: 32000000
+          MAX_ARM64_APK_BYTES: 32000000
         run: ./scripts/report_build_sizes.sh
 
       - name: Upload size report

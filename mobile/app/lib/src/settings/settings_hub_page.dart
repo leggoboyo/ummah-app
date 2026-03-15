@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 
 import '../bootstrap/app_controller.dart';
@@ -38,6 +39,65 @@ class SettingsHubScreen extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'Build ${appController.environment.buildLabel}. Billing is ${appController.billingAvailability.label.toLowerCase()}, notifications are ${appController.notificationHealth?.status.name ?? 'unknown'}, and analytics stay disabled in this build.',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Older-phone performance',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        appController.uiPerformanceMode ==
+                                UiPerformanceMode.lean
+                            ? 'Lean mode is active to reduce visual weight and smooth out slower Android phones.'
+                            : 'Standard mode is active. You can force a leaner interface if you want lower overhead.',
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        initialValue:
+                            appController.uiPerformanceModeOverride?.name ??
+                                'auto',
+                        decoration: const InputDecoration(
+                          labelText: 'Performance mode',
+                        ),
+                        items: const <DropdownMenuItem<String>>[
+                          DropdownMenuItem<String>(
+                            value: 'auto',
+                            child: Text('Auto'),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'standard',
+                            child: Text('Standard'),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'lean',
+                            child: Text('Lean'),
+                          ),
+                        ],
+                        onChanged: (String? value) {
+                          final UiPerformanceMode? override = switch (value) {
+                            'standard' => UiPerformanceMode.standard,
+                            'lean' => UiPerformanceMode.lean,
+                            _ => null,
+                          };
+                          if (override ==
+                              appController.uiPerformanceModeOverride) {
+                            return;
+                          }
+                          appController.updateUiPerformanceModeOverride(
+                            override,
+                          );
+                        },
                       ),
                     ],
                   ),

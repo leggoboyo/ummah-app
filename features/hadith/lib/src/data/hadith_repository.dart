@@ -11,11 +11,13 @@ import 'package:sqlite3/sqlite3.dart';
 import '../domain/hadith_category.dart';
 import '../domain/hadith_detail.dart';
 import '../domain/hadith_finder_result.dart';
+import '../domain/hadith_grounded_answer.dart';
 import '../domain/hadith_language.dart';
 import '../domain/hadith_pack_access_grant.dart';
 import '../domain/hadith_pack_install.dart';
 import '../domain/hadith_pack_manifest.dart';
 import '../domain/hadith_search_result.dart';
+import '../services/hadith_answer_engine.dart';
 import 'hadeethenc_remote_data_source.dart';
 import 'hadith_pack_remote_data_source.dart';
 
@@ -63,7 +65,8 @@ class HadithRepository {
         _providedDatabase = database,
         _databasePathResolver = databasePathResolver,
         _assetBundle = assetBundle ?? rootBundle,
-        _clock = clock ?? DateTime.now;
+        _clock = clock ?? DateTime.now,
+        _answerEngine = const HadithAnswerEngine();
 
   static const String _providerKey = 'hadeethenc';
   static const String _providerVersion = 'API/v1';
@@ -80,30 +83,68 @@ class HadithRepository {
     r'[^0-9a-z\u0600-\u06FF]+',
   );
   static final RegExp _multiWhitespace = RegExp(r'\s+');
+  static const Set<String> _placeholderMetadataValues = <String>{
+    'en',
+    'ar',
+    'ur',
+  };
 
   static const Set<String> _stopWords = <String>{
     'a',
     'an',
+    'am',
     'and',
     'are',
     'about',
+    'be',
+    'been',
+    'being',
+    'can',
+    'could',
+    'deal',
+    'did',
+    'do',
+    'does',
+    'exact',
     'for',
     'from',
+    'give',
+    'guide',
+    'handle',
+    'help',
     'how',
     'i',
     'if',
     'in',
     'is',
     'it',
+    'me',
+    'mine',
+    'my',
+    'need',
     'of',
     'on',
     'or',
+    'our',
+    'problem',
+    'should',
+    'situation',
+    'tell',
+    'that',
     'the',
+    'them',
+    'they',
+    'this',
     'to',
+    'us',
     'what',
     'when',
     'where',
     'with',
+    'would',
+    'you',
+    'your',
+    'yours',
   };
 
   static const Map<String, List<String>> _synonymGroups =
@@ -175,6 +216,21 @@ class HadithRepository {
       'نكاح',
       'نکاح',
     ],
+    'chastity': <String>[
+      'chastity',
+      'desire',
+      'fornication',
+      'gaze',
+      'lowering gaze',
+      'lust',
+      'modesty',
+      'temptation',
+      'zina',
+      'عفة',
+      'زنا',
+      'شهوة',
+      'غض البصر',
+    ],
     'divorce': <String>[
       'divorce',
       'talaq',
@@ -238,6 +294,7 @@ class HadithRepository {
   final Future<String> Function()? _databasePathResolver;
   final AssetBundle _assetBundle;
   final DateTime Function() _clock;
+  final HadithAnswerEngine _answerEngine;
 
   Database? _database;
   List<HadithPackManifest>? _availablePackCache;
@@ -1017,6 +1074,27 @@ class HadithRepository {
     return const <HadithFinderResult>[];
   }
 
+  Future<HadithGroundedAnswer> answerQuestion({
+    required String query,
+    required String preferredLanguageCode,
+  }) async {
+    final _FinderQuery finderQuery = _FinderQuery.fromRaw(
+      query,
+      stopWords: _stopWords,
+      synonymIndex: _synonymIndex,
+    );
+    final List<HadithFinderResult> results = await findForUseCase(
+      query: query,
+      preferredLanguageCode: preferredLanguageCode,
+      limit: 6,
+    );
+    return _answerEngine.build(
+      query: query,
+      significantTokenCount: finderQuery.tokens.length,
+      candidates: results,
+    );
+  }
+
   Future<String?> suggestQuery({
     required String query,
     required String preferredLanguageCode,
@@ -1431,7 +1509,9 @@ class HadithRepository {
     final String title = row['title'] as String? ?? '';
     final String hadithText = row['hadith_text'] as String? ?? '';
     final String explanation = row['explanation'] as String? ?? '';
-    final String sourceReference = row['source_reference'] as String? ?? '';
+    final String sourceReference = _sanitizeSourceReference(
+      row['source_reference'] as String? ?? '',
+    );
     final List<String> benefits = _decodeStringList(row['benefits_json']);
     final String benefitsText = benefits.join(' ');
     final String synonymsText = row['synonyms_text'] as String? ?? '';
@@ -1447,48 +1527,60 @@ class HadithRepository {
 
     double score = 0;
     final Set<String> reasons = <String>{};
+    final Set<String> matchedTerms = <String>{};
+    final Set<String> matchedTopics = <String>{};
+    bool exactPhraseMatch = false;
 
     if (normalizedPhrase.isNotEmpty &&
         normalizedTitle.contains(normalizedPhrase)) {
       score += 60;
       reasons.add('Matched in title');
+      exactPhraseMatch = true;
     }
     if (normalizedPhrase.isNotEmpty &&
         normalizedHadithText.contains(normalizedPhrase)) {
       score += 42;
       reasons.add('Matched in hadith text');
+      exactPhraseMatch = true;
     }
     if (normalizedPhrase.isNotEmpty &&
         normalizedExplanation.contains(normalizedPhrase)) {
       score += 36;
       reasons.add('Matched in explanation');
+      exactPhraseMatch = true;
     }
     if (normalizedPhrase.isNotEmpty &&
         normalizedBenefits.contains(normalizedPhrase)) {
       score += 24;
       reasons.add('Matched in lessons and benefits');
+      exactPhraseMatch = true;
     }
 
     for (final String token in finderQuery.tokens) {
       if (normalizedTitle.contains(token)) {
         score += 18;
         reasons.add('Matched in title');
+        matchedTerms.add(token);
       }
       if (normalizedHadithText.contains(token)) {
         score += 14;
         reasons.add('Matched in hadith text');
+        matchedTerms.add(token);
       }
       if (normalizedExplanation.contains(token)) {
         score += 10;
         reasons.add('Matched in explanation');
+        matchedTerms.add(token);
       }
       if (normalizedBenefits.contains(token)) {
         score += 8;
         reasons.add('Matched in lessons and benefits');
+        matchedTerms.add(token);
       }
       if (normalizedSourceReference.contains(token)) {
         score += 6;
         reasons.add('Matched in source reference');
+        matchedTerms.add(token);
       }
     }
 
@@ -1496,6 +1588,7 @@ class HadithRepository {
       if (normalizedSynonyms.contains(canonical)) {
         score += 12;
         reasons.add('Related to $canonical');
+        matchedTopics.add(canonical);
       }
     }
 
@@ -1506,20 +1599,40 @@ class HadithRepository {
     final HadithSearchResult result = HadithSearchResult(
       id: row['hadith_id'] as int,
       languageCode: row['language_code'] as String,
-      title: title,
+      title: _displayTitle(
+        title: title,
+        sourceReference: sourceReference,
+        hadithText: hadithText,
+        hadithId: row['hadith_id'] as int,
+        languageCode: row['language_code'] as String,
+      ),
       hadithText: hadithText,
       explanation: explanation,
       attribution: _providerAttribution,
       grade: row['grade'] as String? ?? '',
       sourceReference: sourceReference,
-      sourceUrl: row['source_url'] as String? ?? '',
+      sourceUrl: _bestSourceUrl(
+        existing: row['source_url'] as String? ?? '',
+        hadithId: row['hadith_id'] as int,
+        languageCode: row['language_code'] as String,
+      ),
       matchReasons: reasons.toList(growable: false),
     );
     return _ScoredPackRow(
       result: HadithFinderResult(
         result: result,
         score: score,
+        confidence: _resultConfidence(
+          score: score,
+          significantTokenCount: finderQuery.tokens.length,
+          matchedTermCount: matchedTerms.length,
+          matchedTopicCount: matchedTopics.length,
+          exactPhraseMatch: exactPhraseMatch,
+        ),
         matchReasons: reasons.toList(growable: false),
+        matchedTerms: matchedTerms.toList(growable: false),
+        matchedTopics: matchedTopics.toList(growable: false),
+        exactPhraseMatch: exactPhraseMatch,
         usedLanguageFallback: usedLanguageFallback,
       ),
     );
@@ -1541,11 +1654,22 @@ class HadithRepository {
     return HadithSearchResult(
       id: row['hadith_id'] as int,
       languageCode: row['language_code'] as String,
-      title: row['title'] as String,
+      title: _displayTitle(
+        title: row['title'] as String? ?? '',
+        sourceReference: '',
+        hadithText: row['hadith_text'] as String? ?? '',
+        hadithId: row['hadith_id'] as int,
+        languageCode: row['language_code'] as String,
+      ),
       hadithText: row['hadith_text'] as String,
       explanation: row['explanation'] as String,
       attribution: row['attribution'] as String,
       grade: row['grade'] as String,
+      sourceUrl: _bestSourceUrl(
+        existing: '',
+        hadithId: row['hadith_id'] as int,
+        languageCode: row['language_code'] as String,
+      ),
     );
   }
 
@@ -1570,7 +1694,15 @@ class HadithRepository {
     return HadithDetail(
       id: row['hadith_id'] as int,
       languageCode: row['language_code'] as String,
-      title: title,
+      title: _displayTitle(
+        title: title,
+        sourceReference: _sanitizeSourceReference(
+          row['source_reference'] as String? ?? '',
+        ),
+        hadithText: hadithText,
+        hadithId: row['hadith_id'] as int,
+        languageCode: row['language_code'] as String,
+      ),
       hadithText: hadithText,
       attribution: _providerAttribution,
       grade: row['grade'] as String? ?? '',
@@ -1587,11 +1719,21 @@ class HadithRepository {
       attributionArabic: _providerAttribution,
       gradeArabic: row['grade_arabic'] as String? ?? '',
       titleArabic: titleArabic,
-      benefits: benefits,
+      benefits: _sanitizeBenefits(
+        benefits,
+        languageCode: row['language_code'] as String,
+        grade: row['grade'] as String? ?? '',
+      ),
       benefitsArabic: benefitsArabic,
-      sourceReference: row['source_reference'] as String? ?? '',
+      sourceReference: _sanitizeSourceReference(
+        row['source_reference'] as String? ?? '',
+      ),
       sourceReferenceArabic: row['source_reference_arabic'] as String? ?? '',
-      sourceUrl: row['source_url'] as String? ?? '',
+      sourceUrl: _bestSourceUrl(
+        existing: row['source_url'] as String? ?? '',
+        hadithId: row['hadith_id'] as int,
+        languageCode: row['language_code'] as String,
+      ),
       lastSyncedAt: _readDateTime(row['installed_at']),
     );
   }
@@ -1600,7 +1742,13 @@ class HadithRepository {
     return HadithDetail(
       id: row['hadith_id'] as int,
       languageCode: row['language_code'] as String,
-      title: row['title'] as String,
+      title: _displayTitle(
+        title: row['title'] as String? ?? '',
+        sourceReference: '',
+        hadithText: row['hadith_text'] as String? ?? '',
+        hadithId: row['hadith_id'] as int,
+        languageCode: row['language_code'] as String,
+      ),
       hadithText: row['hadith_text'] as String,
       attribution: row['attribution'] as String,
       grade: row['grade'] as String,
@@ -1618,6 +1766,13 @@ class HadithRepository {
       ),
       attributionArabic: row['attribution_arabic'] as String,
       gradeArabic: row['grade_arabic'] as String,
+      benefits: const <String>[],
+      sourceReference: '',
+      sourceUrl: _bestSourceUrl(
+        existing: '',
+        hadithId: row['hadith_id'] as int,
+        languageCode: row['language_code'] as String,
+      ),
       lastSyncedAt: _readDateTime(row['last_synced_at']),
     );
   }
@@ -1957,6 +2112,112 @@ class HadithRepository {
         .replaceAll(_nonSearchCharacters, ' ')
         .replaceAll(_multiWhitespace, ' ')
         .trim();
+  }
+
+  String _sanitizeSourceReference(String value) {
+    final String trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return '';
+    }
+    final String normalized = trimmed.toLowerCase();
+    if (_placeholderMetadataValues.contains(normalized)) {
+      return '';
+    }
+    return trimmed;
+  }
+
+  String _displayTitle({
+    required String title,
+    required String sourceReference,
+    required String hadithText,
+    required int hadithId,
+    required String languageCode,
+  }) {
+    final String trimmedTitle = title.trim();
+    final String normalized = trimmedTitle.toLowerCase();
+    if (trimmedTitle.isNotEmpty &&
+        !_placeholderMetadataValues.contains(normalized) &&
+        normalized != languageCode.toLowerCase()) {
+      return trimmedTitle;
+    }
+    final String trimmedSourceReference = sourceReference.trim();
+    if (trimmedSourceReference.isNotEmpty) {
+      return trimmedSourceReference;
+    }
+    final String trimmedText = hadithText.trim();
+    if (trimmedText.isNotEmpty) {
+      final Match? match =
+          RegExp(r'^(.{1,120}?[.!?])(?:\s|$)').firstMatch(trimmedText);
+      if (match != null) {
+        return match.group(1)!.trim();
+      }
+      if (trimmedText.length <= 120) {
+        return trimmedText;
+      }
+      return '${trimmedText.substring(0, 117).trim()}...';
+    }
+    return 'HadeethEnc hadith #$hadithId';
+  }
+
+  String _bestSourceUrl({
+    required String existing,
+    required int hadithId,
+    required String languageCode,
+  }) {
+    final String trimmed = existing.trim();
+    if (trimmed.isNotEmpty) {
+      return trimmed;
+    }
+    return 'https://hadeethenc.com/$languageCode/browse/hadith/$hadithId';
+  }
+
+  List<String> _sanitizeBenefits(
+    List<String> rawBenefits, {
+    required String languageCode,
+    required String grade,
+  }) {
+    final Set<String> seen = <String>{};
+    final List<String> cleaned = <String>[];
+    final bool prefersLatin = languageCode.toLowerCase() == 'en';
+    final String normalizedGrade = _normalizeForSearch(grade);
+    for (final String benefit in rawBenefits) {
+      final String trimmed = benefit.trim();
+      if (trimmed.isEmpty) {
+        continue;
+      }
+      final String normalized = _normalizeForSearch(trimmed);
+      if (normalized.isEmpty || normalized == normalizedGrade) {
+        continue;
+      }
+      if (prefersLatin && !RegExp(r'[A-Za-z]').hasMatch(trimmed)) {
+        continue;
+      }
+      if (seen.add(normalized)) {
+        cleaned.add(trimmed);
+      }
+    }
+    return cleaned;
+  }
+
+  double _resultConfidence({
+    required double score,
+    required int significantTokenCount,
+    required int matchedTermCount,
+    required int matchedTopicCount,
+    required bool exactPhraseMatch,
+  }) {
+    final double scoreSignal = (score / 90).clamp(0, 1).toDouble();
+    final double coverageSignal = significantTokenCount <= 0
+        ? 0
+        : (matchedTermCount / significantTokenCount).clamp(0, 1).toDouble();
+    final double topicSignal = matchedTopicCount == 0 ? 0 : 0.1;
+    final double phraseSignal = exactPhraseMatch ? 0.15 : 0;
+    return (scoreSignal * 0.6 +
+            coverageSignal * 0.3 +
+            topicSignal +
+            phraseSignal)
+        .clamp(0, 1)
+        .toDouble();
   }
 
   List<String> _canonicalTagsForSearchableText(String value) {

@@ -44,6 +44,18 @@ StartupSelection _defaultStartupSelectionForMode(QuranStartupMode mode) {
   }
 }
 
+UiPerformanceMode? _uiPerformanceModeFromName(String? raw) {
+  if (raw == null) {
+    return null;
+  }
+  for (final UiPerformanceMode value in UiPerformanceMode.values) {
+    if (value.name == raw) {
+      return value;
+    }
+  }
+  return null;
+}
+
 class AppProfile {
   AppProfile({
     required this.onboardingComplete,
@@ -59,6 +71,7 @@ class AppProfile {
     required this.quranStartupMode,
     required this.startupSelection,
     required this.analyticsEnabled,
+    this.uiPerformanceModeOverride,
     this.adhanSoundKey = 'default',
   });
 
@@ -105,6 +118,7 @@ class AppProfile {
   final QuranStartupMode quranStartupMode;
   final StartupSelection startupSelection;
   final bool analyticsEnabled;
+  final UiPerformanceMode? uiPerformanceModeOverride;
   final String adhanSoundKey;
 
   AppProfile copyWith({
@@ -121,6 +135,8 @@ class AppProfile {
     QuranStartupMode? quranStartupMode,
     StartupSelection? startupSelection,
     bool? analyticsEnabled,
+    UiPerformanceMode? uiPerformanceModeOverride,
+    bool clearUiPerformanceModeOverride = false,
     String? adhanSoundKey,
   }) {
     return AppProfile(
@@ -137,6 +153,9 @@ class AppProfile {
       quranStartupMode: quranStartupMode ?? this.quranStartupMode,
       startupSelection: startupSelection ?? this.startupSelection,
       analyticsEnabled: analyticsEnabled ?? this.analyticsEnabled,
+      uiPerformanceModeOverride: clearUiPerformanceModeOverride
+          ? null
+          : uiPerformanceModeOverride ?? this.uiPerformanceModeOverride,
       adhanSoundKey: adhanSoundKey ?? this.adhanSoundKey,
     );
   }
@@ -162,6 +181,7 @@ class AppProfile {
       'wifiOnlyDownloads': startupSelection.wifiOnlyDownloads,
       'storageSaverMode': startupSelection.storageSaverMode,
       'analyticsEnabled': analyticsEnabled,
+      'uiPerformanceModeOverride': uiPerformanceModeOverride?.name,
       'adhanSoundKey': adhanSoundKey,
     };
   }
@@ -220,6 +240,10 @@ class AppProfile {
                 storageSaverMode: json['storageSaverMode'] as bool? ??
                     defaults.startupSelection.storageSaverMode,
               );
+    final UiPerformanceMode? uiPerformanceModeOverride =
+        _uiPerformanceModeFromName(
+      json['uiPerformanceModeOverride'] as String?,
+    );
 
     return AppProfile(
       onboardingComplete: json['onboardingComplete'] as bool? ?? false,
@@ -249,6 +273,7 @@ class AppProfile {
       quranStartupMode: startupMode,
       startupSelection: startupSelection,
       analyticsEnabled: false,
+      uiPerformanceModeOverride: uiPerformanceModeOverride,
       adhanSoundKey: json['adhanSoundKey'] as String? ?? defaults.adhanSoundKey,
     );
   }

@@ -14,6 +14,7 @@ import 'app_notification_sync_service.dart';
 import 'app_profile.dart';
 import 'app_profile_store.dart';
 import 'app_support_report_builder.dart';
+import 'device_capabilities_service.dart';
 import 'device_location_service.dart';
 import 'diagnostics_logger.dart';
 import 'local_notifications_service.dart';
@@ -22,6 +23,12 @@ import 'revenuecat_mobile_subscription_provider.dart';
 import 'shared_preferences_key_value_store.dart';
 
 class AppController extends ChangeNotifier {
+  static const Set<String> _supportedLanguageCodes = <String>{
+    'en',
+    'ar',
+    'ur',
+  };
+
   AppController({
     AppProfileStore? profileStore,
     DeviceLocationService? locationService,
@@ -36,10 +43,13 @@ class AppController extends ChangeNotifier {
     AppNotificationSyncService? notificationSyncService,
     AppSupportReportBuilder? supportReportBuilder,
     AppModuleRegistry? moduleRegistry,
+    DeviceCapabilitiesService? deviceCapabilitiesService,
   })  : _profileStore = profileStore ?? SharedPreferencesAppProfileStore(),
         _environment = environment ?? AppEnvironment.fromCompileTime(),
         _identityStore = identityStore ?? SecureAppIdentityStore(),
         _logger = logger ?? _buildDiagnosticsLogger(),
+        _deviceCapabilitiesService = deviceCapabilitiesService ??
+            MethodChannelDeviceCapabilitiesService(),
         _locationResolver = locationResolver ??
             AppLocationResolver(
               locationService:
@@ -71,6 +81,7 @@ class AppController extends ChangeNotifier {
   final AppEnvironment _environment;
   final AppIdentityStore _identityStore;
   final DiagnosticsLogger _logger;
+  final DeviceCapabilitiesService _deviceCapabilitiesService;
   final AppLocationResolver _locationResolver;
   final AppNotificationSyncService _notificationSyncService;
   final PrayerTimeCalculator _prayerTimeCalculator;
@@ -80,6 +91,7 @@ class AppController extends ChangeNotifier {
   final SubscriptionRepository _subscriptionRepository;
 
   AppProfile _profile = AppProfile.defaults();
+  DeviceCapabilities _deviceCapabilities = const DeviceCapabilities();
   Coordinates? _resolvedCoordinates;
   NotificationSyncResult? _notificationSyncResult;
   SubscriptionState? _subscriptionState;
@@ -161,6 +173,26 @@ class AppController extends ChangeNotifier {
 
   String? get revenueCatAppUserId => _revenueCatAppUserId;
 
+  int? get androidSdkInt => _deviceCapabilities.androidSdkInt;
+
+  bool get isLowRamDevice => _deviceCapabilities.isLowRamDevice;
+
+  UiPerformanceMode? get uiPerformanceModeOverride =>
+      _profile.uiPerformanceModeOverride;
+
+  UiPerformanceMode get uiPerformanceMode {
+    final UiPerformanceMode? override = _profile.uiPerformanceModeOverride;
+    if (override != null) {
+      return override;
+    }
+    final int? sdkInt = _deviceCapabilities.androidSdkInt;
+    if ((sdkInt != null && sdkInt <= 26) ||
+        _deviceCapabilities.isLowRamDevice) {
+      return UiPerformanceMode.lean;
+    }
+    return UiPerformanceMode.standard;
+  }
+
   PrayerNotificationPreferences get notificationPreferences =>
       PrayerNotificationPreferences(
         preciseAndroidAlarms: _profile.preciseAndroidAlarms,
@@ -185,7 +217,12 @@ class AppController extends ChangeNotifier {
     );
     await _notificationSyncService.initialize();
     _revenueCatAppUserId = await _identityStore.readRevenueCatAppUserId();
-    _profile = await _profileStore.load();
+    final AppProfile loadedProfile = await _profileStore.load();
+    _profile = _sanitizeProfile(loadedProfile);
+    if (_profile.languageCode != loadedProfile.languageCode) {
+      await _profileStore.save(_profile);
+    }
+    _deviceCapabilities = await _deviceCapabilitiesService.readCapabilities();
 
     if (_profile.onboardingComplete) {
       await _refreshCoreState(
@@ -201,7 +238,7 @@ class AppController extends ChangeNotifier {
     isReady = true;
     await _logger.log(
       AppLogLevel.info,
-      'App bootstrap completed. Onboarding complete: ${_profile.onboardingComplete}.',
+      'App bootstrap completed. Onboarding complete: ${_profile.onboardingComplete}. UI mode: ${uiPerformanceMode.name}.',
     );
     notifyListeners();
   }
@@ -347,7 +384,7 @@ class AppController extends ChangeNotifier {
     try {
       _profile = _profile.copyWith(
         onboardingComplete: true,
-        languageCode: selectedLanguageCode,
+        languageCode: _sanitizeLanguageCode(selectedLanguageCode),
         fiqhProfile: selectedFiqhProfile,
         calculationMethod: selectedMethod,
         locationMode: selectedLocationMode,
@@ -430,6 +467,21 @@ class AppController extends ChangeNotifier {
     await _logger.log(
       AppLogLevel.info,
       'Prayer calculation method updated to ${method.name}.',
+    );
+    notifyListeners();
+  }
+
+  Future<void> updateUiPerformanceModeOverride(
+    UiPerformanceMode? override,
+  ) async {
+    _profile = _profile.copyWith(
+      uiPerformanceModeOverride: override,
+      clearUiPerformanceModeOverride: override == null,
+    );
+    await _profileStore.save(_profile);
+    await _logger.log(
+      AppLogLevel.info,
+      'UI performance mode override updated to ${override?.name ?? 'auto'}.',
     );
     notifyListeners();
   }
@@ -610,6 +662,7 @@ class AppController extends ChangeNotifier {
     return _supportReportBuilder.build(
       environment: _environment,
       profile: _profile,
+      uiPerformanceMode: uiPerformanceMode,
       entitlements: entitlements,
       billingProviderKind: billingProviderKind,
       billingAvailability: billingAvailability,
@@ -687,6 +740,20 @@ class AppController extends ChangeNotifier {
     } on StateError {
       return InMemoryDiagnosticsLogger();
     }
+  }
+
+  AppProfile _sanitizeProfile(AppProfile profile) {
+    return profile.copyWith(
+      languageCode: _sanitizeLanguageCode(profile.languageCode),
+    );
+  }
+
+  String _sanitizeLanguageCode(String languageCode) {
+    final String normalized = languageCode.trim().toLowerCase();
+    if (_supportedLanguageCodes.contains(normalized)) {
+      return normalized;
+    }
+    return 'en';
   }
 
   Duration _timeZoneOffsetForDate(String timeZoneId, DateTime date) {

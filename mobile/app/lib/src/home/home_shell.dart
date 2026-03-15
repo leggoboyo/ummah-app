@@ -35,39 +35,19 @@ class _HomeShellState extends State<HomeShell> {
   static const int _resumeSyncDebounceSeconds = 30;
 
   int _selectedIndex = 0;
-  late final QuranController _quranController;
-  late final Timer _clockTimer;
-  DateTime _now = DateTime.now();
+  QuranController? _quranController;
   DateTime? _lastForegroundRefreshAt;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(_lifecycleObserver);
-    _quranController = QuranController(
-      startupMode: widget.controller.quranStartupMode,
-      startupSelection: widget.controller.startupSelection,
-    );
-    Future<void>.microtask(
-      () => _quranController.initialize(
-        preferredLanguageCode: widget.controller.languageCode,
-      ),
-    );
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _now = DateTime.now();
-      });
-    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
-    _clockTimer.cancel();
-    _quranController.dispose();
+    _quranController?.dispose();
     super.dispose();
   }
 
@@ -85,20 +65,46 @@ class _HomeShellState extends State<HomeShell> {
     await widget.controller.refreshForegroundReliability();
   }
 
+  Future<void> _ensureQuranControllerInitialized() async {
+    final QuranController controller = _quranController ??= QuranController(
+      startupMode: widget.controller.quranStartupMode,
+      startupSelection: widget.controller.startupSelection,
+    );
+    await controller.initialize(
+      preferredLanguageCode: widget.controller.languageCode,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+  }
+
+  Widget _buildSelectedPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return _DashboardPage(controller: widget.controller);
+      case 1:
+        return _PrayerPage(controller: widget.controller);
+      case 2:
+        final QuranController? quranController = _quranController;
+        if (quranController == null || !quranController.isReady) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return QuranPage(controller: quranController);
+      case 3:
+        return _QiblaPage(controller: widget.controller);
+      case 4:
+        return _MorePage(appController: widget.controller);
+    }
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppStrings strings =
         AppStrings.forCode(Localizations.localeOf(context).languageCode);
-    final List<Widget> pages = <Widget>[
-      _DashboardPage(controller: widget.controller, now: _now),
-      _PrayerPage(controller: widget.controller, now: _now),
-      QuranPage(controller: _quranController),
-      _QiblaPage(controller: widget.controller),
-      _MorePage(
-        quranController: _quranController,
-        appController: widget.controller,
-      ),
-    ];
+    final bool leanMode =
+        widget.controller.uiPerformanceMode == UiPerformanceMode.lean;
 
     return Scaffold(
       extendBody: true,
@@ -106,30 +112,34 @@ class _HomeShellState extends State<HomeShell> {
         title: Text(strings.appName),
       ),
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 260),
+        duration: Duration(milliseconds: leanMode ? 120 : 260),
         child: KeyedSubtree(
           key: ValueKey<int>(_selectedIndex),
-          child: pages[_selectedIndex],
+          child: _buildSelectedPage(),
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: EdgeInsets.fromLTRB(
+            leanMode ? 12 : 16, 0, leanMode ? 12 : 16, leanMode ? 12 : 16),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(leanMode ? 22 : 28),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
+                color: Colors.black.withValues(alpha: leanMode ? 0.04 : 0.08),
+                blurRadius: leanMode ? 12 : 24,
+                offset: Offset(0, leanMode ? 6 : 10),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(leanMode ? 22 : 28),
             child: NavigationBar(
               selectedIndex: _selectedIndex,
               onDestinationSelected: (int index) {
+                if (index == 2) {
+                  unawaited(_ensureQuranControllerInitialized());
+                }
                 setState(() {
                   _selectedIndex = index;
                 });
@@ -172,38 +182,23 @@ class _HomeShellState extends State<HomeShell> {
 class _DashboardPage extends StatelessWidget {
   const _DashboardPage({
     required this.controller,
-    required this.now,
   });
 
   final AppController controller;
-  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final AppStrings strings =
         AppStrings.forCode(Localizations.localeOf(context).languageCode);
-    final PrayerDay prayerDay = controller.prayerDayFor(now);
-    final PrayerName? nextPrayer = controller.nextPrayer(now);
-    final DateTime? nextPrayerTime =
-        nextPrayer == null ? null : prayerDay.timeFor(nextPrayer);
     final NotificationHealth? notificationHealth =
         controller.notificationHealth;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
       children: <Widget>[
-        _GradientHeroCard(
-          eyebrow: strings.nextPrayerTitle,
-          title: nextPrayer == null
-              ? strings.allPrayersPassedMessage
-              : nextPrayer.label,
-          subtitle: nextPrayerTime == null
-              ? 'Your next schedule will appear after midnight.'
-              : '${_formatTime(nextPrayerTime)} • ${_formatCountdownExact(nextPrayerTime.difference(now))}',
-          footer: _HeroSettingsFooter(
-            controller: controller,
-            strings: strings,
-          ),
+        _LiveNextPrayerHeroCard(
+          controller: controller,
+          strings: strings,
         ),
         if (controller.bannerMessage != null)
           Card(
@@ -227,34 +222,10 @@ class _DashboardPage extends StatelessWidget {
             notificationHealth: notificationHealth,
           ),
         ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _SectionHeader(
-                  title: 'Today at a glance',
-                  subtitle: 'Today\'s full prayer schedule.',
-                ),
-                const SizedBox(height: 16),
-                for (final PrayerName prayer in PrayerName.values)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _PrayerSnapshotTile(
-                      label: prayer.label,
-                      timeLabel: _formatTime(prayerDay.timeFor(prayer)),
-                      highlighted: nextPrayer == prayer,
-                      detailLabel:
-                          nextPrayer == prayer && nextPrayerTime != null
-                              ? _formatCountdownExact(
-                                  nextPrayerTime.difference(now))
-                              : null,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+        _LivePrayerScheduleCard(
+          controller: controller,
+          title: 'Today at a glance',
+          subtitle: 'Today\'s full prayer schedule.',
         ),
       ],
     );
@@ -264,20 +235,14 @@ class _DashboardPage extends StatelessWidget {
 class _PrayerPage extends StatelessWidget {
   const _PrayerPage({
     required this.controller,
-    required this.now,
   });
 
   final AppController controller;
-  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final AppStrings strings =
         AppStrings.forCode(Localizations.localeOf(context).languageCode);
-    final PrayerDay prayerDay = controller.prayerDayFor(now);
-    final PrayerName? nextPrayer = controller.nextPrayer(now);
-    final DateTime? nextPrayerTime =
-        nextPrayer == null ? null : prayerDay.timeFor(nextPrayer);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
       children: <Widget>[
@@ -289,39 +254,191 @@ class _PrayerPage extends StatelessWidget {
             controller: controller,
             strings: strings,
           ),
+          compact: controller.uiPerformanceMode == UiPerformanceMode.lean,
         ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _SectionHeader(
-                  title: 'Today',
-                  subtitle:
-                      'Prayer times are calculated locally on your device.',
-                ),
-                const SizedBox(height: 16),
-                for (final PrayerName prayer in PrayerName.values)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _PrayerSnapshotTile(
-                      label: prayer.label,
-                      timeLabel: _formatTime(prayerDay.timeFor(prayer)),
-                      highlighted: nextPrayer == prayer,
-                      detailLabel:
-                          nextPrayer == prayer && nextPrayerTime != null
-                              ? _formatCountdownExact(
-                                  nextPrayerTime.difference(now))
-                              : null,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+        _LivePrayerScheduleCard(
+          controller: controller,
+          title: 'Today',
+          subtitle: 'Prayer times are calculated locally on your device.',
         ),
       ],
     );
+  }
+}
+
+class _LiveNextPrayerHeroCard extends StatefulWidget {
+  const _LiveNextPrayerHeroCard({
+    required this.controller,
+    required this.strings,
+  });
+
+  final AppController controller;
+  final AppStrings strings;
+
+  @override
+  State<_LiveNextPrayerHeroCard> createState() =>
+      _LiveNextPrayerHeroCardState();
+}
+
+class _LiveNextPrayerHeroCardState extends State<_LiveNextPrayerHeroCard> {
+  Timer? _timer;
+  DateTime _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _startTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant _LiveNextPrayerHeroCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller.uiPerformanceMode !=
+        widget.controller.uiPerformanceMode) {
+      _startTicker();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final PrayerName? nextPrayer = widget.controller.nextPrayer(_now);
+    final PrayerDay prayerDay = widget.controller.prayerDayFor(_now);
+    final DateTime? nextPrayerTime =
+        nextPrayer == null ? null : prayerDay.timeFor(nextPrayer);
+
+    return _GradientHeroCard(
+      eyebrow: widget.strings.nextPrayerTitle,
+      title: nextPrayer == null
+          ? widget.strings.allPrayersPassedMessage
+          : nextPrayer.label,
+      subtitle: nextPrayerTime == null
+          ? 'Your next schedule will appear after midnight.'
+          : '${_formatTime(nextPrayerTime)} • ${_formatCountdownExact(nextPrayerTime.difference(_now))}',
+      footer: _HeroSettingsFooter(
+        controller: widget.controller,
+        strings: widget.strings,
+      ),
+      compact: widget.controller.uiPerformanceMode == UiPerformanceMode.lean,
+    );
+  }
+
+  void _startTicker() {
+    _timer?.cancel();
+    final Duration interval =
+        widget.controller.uiPerformanceMode == UiPerformanceMode.lean
+            ? const Duration(seconds: 15)
+            : const Duration(seconds: 1);
+    _timer = Timer.periodic(interval, (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _now = DateTime.now();
+      });
+    });
+  }
+}
+
+class _LivePrayerScheduleCard extends StatefulWidget {
+  const _LivePrayerScheduleCard({
+    required this.controller,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final AppController controller;
+  final String title;
+  final String subtitle;
+
+  @override
+  State<_LivePrayerScheduleCard> createState() =>
+      _LivePrayerScheduleCardState();
+}
+
+class _LivePrayerScheduleCardState extends State<_LivePrayerScheduleCard> {
+  Timer? _timer;
+  DateTime _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _startTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant _LivePrayerScheduleCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller.uiPerformanceMode !=
+        widget.controller.uiPerformanceMode) {
+      _startTicker();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final PrayerDay prayerDay = widget.controller.prayerDayFor(_now);
+    final PrayerName? nextPrayer = widget.controller.nextPrayer(_now);
+    final DateTime? nextPrayerTime =
+        nextPrayer == null ? null : prayerDay.timeFor(nextPrayer);
+    final bool compact =
+        widget.controller.uiPerformanceMode == UiPerformanceMode.lean;
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(compact ? 16 : 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _SectionHeader(
+              title: widget.title,
+              subtitle: widget.subtitle,
+            ),
+            SizedBox(height: compact ? 12 : 16),
+            for (final PrayerName prayer in PrayerName.values)
+              Padding(
+                padding: EdgeInsets.only(bottom: compact ? 8 : 10),
+                child: _PrayerSnapshotTile(
+                  label: prayer.label,
+                  timeLabel: _formatTime(prayerDay.timeFor(prayer)),
+                  highlighted: nextPrayer == prayer,
+                  detailLabel: nextPrayer == prayer && nextPrayerTime != null
+                      ? _formatCountdownExact(nextPrayerTime.difference(_now))
+                      : null,
+                  compact: compact,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _startTicker() {
+    _timer?.cancel();
+    final Duration interval =
+        widget.controller.uiPerformanceMode == UiPerformanceMode.lean
+            ? const Duration(seconds: 30)
+            : const Duration(seconds: 10);
+    _timer = Timer.periodic(interval, (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _now = DateTime.now();
+      });
+    });
   }
 }
 
@@ -344,15 +461,24 @@ class _QiblaPage extends StatefulWidget {
 class _QiblaPageState extends State<_QiblaPage> {
   final DeviceHeadingService _headingService =
       const FlutterCompassHeadingService();
-  _QiblaViewMode _mode = _QiblaViewMode.compass;
+  late _QiblaViewMode _mode;
+
+  @override
+  void initState() {
+    super.initState();
+    _mode = widget.controller.uiPerformanceMode == UiPerformanceMode.lean
+        ? _QiblaViewMode.bearing
+        : _QiblaViewMode.compass;
+  }
 
   @override
   Widget build(BuildContext context) {
     final double bearing =
         widget.controller.qiblaDirection.bearingFromTrueNorth;
+    final bool useCompassStream = _mode == _QiblaViewMode.compass;
 
     return StreamBuilder<DeviceHeading?>(
-      stream: _headingService.headingStream(),
+      stream: useCompassStream ? _headingService.headingStream() : null,
       builder: (BuildContext context, AsyncSnapshot<DeviceHeading?> snapshot) {
         final DeviceHeading? heading = snapshot.data;
         final bool canUseCompass = heading != null;
@@ -371,6 +497,8 @@ class _QiblaPageState extends State<_QiblaPage> {
               subtitle: showingCompass
                   ? 'Compass mode is live. Point the top of your phone forward and line up the arrow.'
                   : 'Bearing mode works fully offline for your current prayer location.',
+              compact:
+                  widget.controller.uiPerformanceMode == UiPerformanceMode.lean,
             ),
             Card(
               child: Padding(
@@ -406,6 +534,8 @@ class _QiblaPageState extends State<_QiblaPage> {
                       rotationDegrees: arrowRotationDegrees,
                       compassHeadingDegrees: heading?.degreesFromNorth,
                       showingCompass: showingCompass,
+                      compact: widget.controller.uiPerformanceMode ==
+                          UiPerformanceMode.lean,
                     ),
                     const SizedBox(height: 18),
                     Text(
@@ -439,11 +569,9 @@ class _QiblaPageState extends State<_QiblaPage> {
 
 class _MorePage extends StatelessWidget {
   const _MorePage({
-    required this.quranController,
     required this.appController,
   });
 
-  final QuranController quranController;
   final AppController appController;
 
   Future<void> _openHadithFinder(BuildContext context) async {
@@ -515,140 +643,113 @@ class _MorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: quranController,
-      builder: (BuildContext context, _) {
-        final List<Widget> sourceChips = quranController.sourceVersions
-            .map(
-              (SourceVersion version) => Chip(
-                label: Text(
-                  '${version.providerKey}: ${version.contentKey} ${version.version}',
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
+      children: <Widget>[
+        _GradientHeroCard(
+          eyebrow: 'More',
+          title: 'Tools, learning, and support',
+          subtitle: 'Everything beyond the core prayer experience lives here.',
+          compact: appController.uiPerformanceMode == UiPerformanceMode.lean,
+        ),
+        _ModuleCard(
+          icon: Icons.settings_outlined,
+          title: 'Settings',
+          subtitle: 'Privacy controls, source versions, and local diagnostics.',
+          statusLabel: 'Open',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => SettingsHubScreen(
+                  appController: appController,
                 ),
               ),
-            )
-            .toList();
-
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
-          children: <Widget>[
-            _GradientHeroCard(
-              eyebrow: 'More',
-              title: 'Tools, learning, and support',
-              subtitle:
-                  'Everything beyond the core prayer experience lives here.',
-            ),
-            _ModuleCard(
-              icon: Icons.settings_outlined,
-              title: 'Settings',
-              subtitle:
-                  'Privacy controls, source versions, and local diagnostics.',
-              statusLabel: 'Open',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) => SettingsHubScreen(
-                      appController: appController,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _ModuleCard(
-              icon: Icons.workspace_premium_outlined,
-              title: 'Plans & Unlocks',
-              subtitle: appController.subscriptionStatusMessage ??
-                  'Manage premium modules and restore purchases.',
-              statusLabel: 'Open',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) => PlansAndUnlocksScreen(
-                      controller: appController,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _ModuleCard(
-              icon: appController.hasAccess(AppEntitlement.aiQuran) ||
-                      appController.hasAccess(AppEntitlement.aiHadith)
-                  ? Icons.auto_awesome_outlined
-                  : Icons.lock_outline,
-              title: 'AI Assistant',
-              subtitle: appController.hasAccess(AppEntitlement.aiQuran) ||
-                      appController.hasAccess(AppEntitlement.aiHadith)
-                  ? 'Citation-first Quran and Hadith answers with BYOK key storage.'
-                  : 'Unlock Ask Quran AI, Ask Hadith AI, or Mega Bundle to use the assistant.',
-              statusLabel: appController.hasAccess(AppEntitlement.aiQuran) ||
-                      appController.hasAccess(AppEntitlement.aiHadith)
-                  ? 'Unlocked'
-                  : 'Locked',
-              highlighted: appController.hasAccess(AppEntitlement.aiQuran) ||
-                  appController.hasAccess(AppEntitlement.aiHadith),
-              onTap: () => _openAiOrPaywall(context),
-            ),
-            _ModuleCard(
-              icon: appController.hasAccess(AppEntitlement.scholarFeed)
-                  ? Icons.rss_feed_outlined
-                  : Icons.lock_outline,
-              title: 'Scholar Feed',
-              subtitle: appController.hasAccess(AppEntitlement.scholarFeed)
-                  ? 'Curated public source feeds with local metadata caching and source selection.'
-                  : 'Unlock Scholar Feed or Mega Bundle to follow trusted source feeds.',
-              statusLabel: appController.hasAccess(AppEntitlement.scholarFeed)
-                  ? 'Unlocked'
-                  : 'Locked',
-              highlighted: appController.hasAccess(AppEntitlement.scholarFeed),
-              onTap: () => _openScholarFeedOrPaywall(context),
-            ),
-            _ModuleCard(
-              icon: Icons.rule_folder_outlined,
-              title: 'Fiqh Guide',
-              subtitle:
-                  'Daily obligation checklists, disputed issues, and side-by-side school comparison with sourced references.',
-              statusLabel: 'Open',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) => FiqhGuideScreen(
-                      fiqhProfile: appController.fiqhProfile,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _ModuleCard(
-              icon: Icons.library_books_outlined,
-              title: 'Hadith Finder',
-              subtitle: appController.hasAccess(AppEntitlement.hadithPlus)
-                  ? 'Free Sunni Hadith Finder with extra language packs unlocked.'
-                  : 'Free Sunni Hadith Finder with one recommended offline pack. Hadith Plus unlocks extra language packs and future advanced study tools.',
-              statusLabel: appController.hasAccess(AppEntitlement.hadithPlus)
-                  ? 'Open + extras'
-                  : 'Free',
-              highlighted: true,
-              onTap: () => _openHadithFinder(context),
-            ),
-            _DetailPanelCard(
-              icon: Icons.verified_user_outlined,
-              title: 'Safety',
-              subtitle:
-                  'The app presents sourced views, not definitive fatwas. Users should consult qualified scholars for context-heavy issues.',
-            ),
-            if (sourceChips.isNotEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: sourceChips,
-                  ),
+            );
+          },
+        ),
+        _ModuleCard(
+          icon: Icons.workspace_premium_outlined,
+          title: 'Plans & Unlocks',
+          subtitle: appController.subscriptionStatusMessage ??
+              'Manage premium modules and restore purchases.',
+          statusLabel: 'Open',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => PlansAndUnlocksScreen(
+                  controller: appController,
                 ),
               ),
-          ],
-        );
-      },
+            );
+          },
+        ),
+        _ModuleCard(
+          icon: appController.hasAccess(AppEntitlement.aiQuran) ||
+                  appController.hasAccess(AppEntitlement.aiHadith)
+              ? Icons.auto_awesome_outlined
+              : Icons.lock_outline,
+          title: 'AI Assistant',
+          subtitle: appController.hasAccess(AppEntitlement.aiQuran) ||
+                  appController.hasAccess(AppEntitlement.aiHadith)
+              ? 'Citation-first Quran and Hadith answers with BYOK key storage.'
+              : 'Unlock Ask Quran AI, Ask Hadith AI, or Mega Bundle to use the assistant.',
+          statusLabel: appController.hasAccess(AppEntitlement.aiQuran) ||
+                  appController.hasAccess(AppEntitlement.aiHadith)
+              ? 'Unlocked'
+              : 'Locked',
+          highlighted: appController.hasAccess(AppEntitlement.aiQuran) ||
+              appController.hasAccess(AppEntitlement.aiHadith),
+          onTap: () => _openAiOrPaywall(context),
+        ),
+        _ModuleCard(
+          icon: appController.hasAccess(AppEntitlement.scholarFeed)
+              ? Icons.rss_feed_outlined
+              : Icons.lock_outline,
+          title: 'Scholar Feed',
+          subtitle: appController.hasAccess(AppEntitlement.scholarFeed)
+              ? 'Curated public source feeds with local metadata caching and source selection.'
+              : 'Unlock Scholar Feed or Mega Bundle to follow trusted source feeds.',
+          statusLabel: appController.hasAccess(AppEntitlement.scholarFeed)
+              ? 'Unlocked'
+              : 'Locked',
+          highlighted: appController.hasAccess(AppEntitlement.scholarFeed),
+          onTap: () => _openScholarFeedOrPaywall(context),
+        ),
+        _ModuleCard(
+          icon: Icons.rule_folder_outlined,
+          title: 'Fiqh Guide',
+          subtitle:
+              'Daily obligation checklists, disputed issues, and side-by-side school comparison with sourced references.',
+          statusLabel: 'Open',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => FiqhGuideScreen(
+                  fiqhProfile: appController.fiqhProfile,
+                ),
+              ),
+            );
+          },
+        ),
+        _ModuleCard(
+          icon: Icons.library_books_outlined,
+          title: 'Hadith Finder',
+          subtitle: appController.hasAccess(AppEntitlement.hadithPlus)
+              ? 'Free Sunni Hadith Finder with extra language packs unlocked.'
+              : 'Free Sunni Hadith Finder with one recommended offline pack. Hadith Plus unlocks extra language packs and future advanced study tools.',
+          statusLabel: appController.hasAccess(AppEntitlement.hadithPlus)
+              ? 'Open + extras'
+              : 'Free',
+          highlighted: true,
+          onTap: () => _openHadithFinder(context),
+        ),
+        _DetailPanelCard(
+          icon: Icons.verified_user_outlined,
+          title: 'Safety',
+          subtitle:
+              'The app presents sourced views, not definitive fatwas. Users should consult qualified scholars for context-heavy issues.',
+        ),
+      ],
     );
   }
 }
@@ -674,12 +775,14 @@ class _GradientHeroCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.footer,
+    this.compact = false,
   });
 
   final String eyebrow;
   final String title;
   final String subtitle;
   final Widget? footer;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -687,7 +790,7 @@ class _GradientHeroCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(compact ? 22 : 30),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -699,14 +802,14 @@ class _GradientHeroCard extends StatelessWidget {
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.18),
-            blurRadius: 30,
-            offset: const Offset(0, 14),
+            color: colorScheme.primary.withValues(alpha: compact ? 0.1 : 0.18),
+            blurRadius: compact ? 18 : 30,
+            offset: Offset(0, compact ? 8 : 14),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(compact ? 18 : 24),
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
             return Column(
@@ -781,12 +884,14 @@ class _PrayerSnapshotTile extends StatelessWidget {
     required this.timeLabel,
     required this.highlighted,
     this.detailLabel,
+    this.compact = false,
   });
 
   final String label;
   final String timeLabel;
   final bool highlighted;
   final String? detailLabel;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -804,7 +909,10 @@ class _PrayerSnapshotTile extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 14 : 16,
+          vertical: compact ? 12 : 14,
+        ),
         child: Row(
           children: <Widget>[
             Expanded(
@@ -1433,19 +1541,21 @@ class _QiblaDial extends StatelessWidget {
   const _QiblaDial({
     required this.rotationDegrees,
     required this.showingCompass,
+    this.compact = false,
     this.compassHeadingDegrees,
   });
 
   final double rotationDegrees;
   final bool showingCompass;
+  final bool compact;
   final double? compassHeadingDegrees;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Container(
-      width: 250,
-      height: 250,
+      width: compact ? 220 : 250,
+      height: compact ? 220 : 250,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
@@ -1481,8 +1591,8 @@ class _QiblaDial extends StatelessWidget {
               ),
             ),
           Container(
-            width: 164,
-            height: 164,
+            width: compact ? 148 : 164,
+            height: compact ? 148 : 164,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ummah App | Offline-first, source-transparent Islamic app</title>
+    <meta
+      name="description"
+      content="Ummah App is a privacy-first, offline-first Islamic app built to keep core worship utilities local, transparent, and light on both money and performance."
+    />
+    <meta
+      name="theme-color"
+      content="#0d7b61"
+    />
+    <link rel="stylesheet" href="./styles.css?v=4" />
+    <script defer src="./app.js?v=4"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="#top">
+          <span class="brand-mark">U</span>
+          <span class="brand-wordmark">Ummah App</span>
+        </a>
+        <nav class="topnav topnav-desktop" aria-label="Primary">
+          <a href="#mission">Mission</a>
+          <a href="#offline">Offline</a>
+          <a href="#proof">Proof</a>
+          <a href="#sources">Sources</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#cost">Cost</a>
+        </nav>
+        <button
+          class="mobile-nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mobile-nav-panel"
+          aria-label="Open site navigation"
+        >
+          <span></span>
+          <span></span>
+        </button>
+      </header>
+      <div
+        class="mobile-nav-panel"
+        id="mobile-nav-panel"
+        data-open="false"
+        aria-label="Mobile navigation"
+      >
+        <nav class="topnav topnav-mobile" aria-label="Mobile">
+          <a href="#mission">Mission</a>
+          <a href="#offline">Offline</a>
+          <a href="#proof">Proof</a>
+          <a href="#sources">Sources</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#cost">Cost</a>
+        </nav>
+        <a
+          class="button button-secondary mobile-nav-cta"
+          href="https://github.com/leggoboyo/ummah-app"
+          target="_blank"
+          rel="noreferrer"
+        >
+          View the repository
+        </a>
+      </div>
+
+      <main id="top">
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Proof-first Islamic app</p>
+            <h1>
+              A privacy-first, offline-first Islamic app with a verifiable operating model.
+            </h1>
+            <p class="lede">
+              Ummah App is being built around a practical contract: the free
+              worship core should remain usable without an account, without
+              analytics by default, and without turning prayer, qibla, Hijri,
+              or Quran Arabic into backend-dependent features.
+            </p>
+            <p class="hero-trustline">
+              Public documentation, source pages, and repo-backed audits are
+              meant to be part of the product surface, not an afterthought.
+            </p>
+            <div class="hero-mini-grid" aria-label="Core proof points">
+              <div class="hero-mini-card">
+                <span class="hero-mini-label">Free core</span>
+                <strong>No app-level account required</strong>
+              </div>
+              <div class="hero-mini-card">
+                <span class="hero-mini-label">Telemetry posture</span>
+                <strong>No analytics SDK in the current build</strong>
+              </div>
+              <div class="hero-mini-card">
+                <span class="hero-mini-label">Optional cloud scope</span>
+                <strong>Remote Hadith packs and billing only</strong>
+              </div>
+            </div>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#proof">See the evidence</a>
+              <a
+                class="button button-secondary"
+                href="https://github.com/leggoboyo/ummah-app"
+                target="_blank"
+                rel="noreferrer"
+              >
+                View the repository
+              </a>
+            </div>
+          </div>
+          <div class="hero-panel hero-panel--briefing">
+            <div class="hero-panel-head">
+              <p class="eyebrow">Audit snapshot</p>
+              <h2>Current public guarantees</h2>
+              <p class="hero-panel-lede">
+                The project is trying to reduce hidden behavior and make its
+                key claims inspectable in code and docs.
+              </p>
+            </div>
+            <div class="briefing-list" aria-label="Audit guarantees">
+              <div class="briefing-row">
+                <span>Free core</span>
+                <strong>Prayer, qibla, Hijri, Quran Arabic stay local-first</strong>
+              </div>
+              <div class="briefing-row">
+                <span>Identity</span>
+                <strong>No app-level account required for the free core</strong>
+              </div>
+              <div class="briefing-row">
+                <span>Network boundary</span>
+                <strong>Optional services are isolated to optional features</strong>
+              </div>
+              <div class="briefing-row">
+                <span>Site posture</span>
+                <strong>Static, lightweight, GitHub Pages-ready</strong>
+              </div>
+            </div>
+            <div class="hero-note">
+              <h3>Primary evidence</h3>
+              <p>
+                The repo audit, privacy model, security model, source pages,
+                and cost model are linked directly so the public claims can be
+                checked against actual files.
+              </p>
+            </div>
+            <div class="hero-links">
+              <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/repo_reality_report.md" target="_blank" rel="noreferrer">Repo reality report</a>
+              <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/privacy_model.md" target="_blank" rel="noreferrer">Privacy model</a>
+              <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/security_model.md" target="_blank" rel="noreferrer">Security model</a>
+              <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/sources/index.md" target="_blank" rel="noreferrer">Source index</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="mission">
+          <div class="section-head">
+            <p class="eyebrow">Mission</p>
+            <h2>Build an Islamic app that is easier to trust because it asks less of the user</h2>
+          </div>
+          <div class="mission-grid">
+            <article class="mission-card mission-card--wide">
+              <h3>What Ummah App is trying to do</h3>
+              <p>
+                The app is being built around a small set of hard promises: the
+                free worship core should stay usable offline, the content should
+                stay attributable, optional cloud features should stay optional,
+                and the product should avoid becoming a surveillance-heavy or
+                ad-shaped experience.
+              </p>
+              <p>
+                That means the repo is structured to separate the local
+                essentials from optional packs, optional billing, and optional
+                AI. When something needs a network, that boundary is supposed to
+                be visible in both the code and the docs.
+              </p>
+            </article>
+            <article class="mission-card">
+              <h3>Commitments that drive decisions</h3>
+              <ul class="check-list">
+                <li>No required app-level account for the free core</li>
+                <li>No analytics or telemetry by default</li>
+                <li>No hidden server dependency for prayer, qibla, Hijri, or Quran Arabic</li>
+                <li>Keep religious sources versioned, attributable, and inspectable</li>
+              </ul>
+            </article>
+            <article class="mission-card">
+              <h3>Things the project is explicitly trying to avoid</h3>
+              <ul class="check-list">
+                <li>Turning worship utilities into an engagement funnel</li>
+                <li>Bundling every large corpus into the first install</li>
+                <li>Shipping black-box religious output without visible sourcing</li>
+                <li>Letting optional infrastructure quietly become mandatory</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="principles">
+          <div class="section-head">
+            <p class="eyebrow">Design principles</p>
+            <h2>Low monetary cost, low performance cost, low hidden behavior</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Stay useful offline</h3>
+              <p>
+                The free core is designed so it does not need a backend for
+                prayer calculations, local reminders after scheduling, qibla
+                bearing, Hijri date, or Quran Arabic reading.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Stay inspectable</h3>
+              <p>
+                Religious source pages, repo audits, privacy docs, security
+                docs, and pack source/version docs are all linked below so
+                people can verify the claims instead of trusting marketing
+                language.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Stay light</h3>
+              <p>
+                Optional features are modular. Packs download on demand. The
+                public site itself is plain static HTML, CSS, and tiny
+                JavaScript so it can live on GitHub Pages with almost no
+                operational cost.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="offline">
+          <div class="section-head">
+            <p class="eyebrow">What works when offline</p>
+            <h2>Three clear network postures instead of one blurry promise</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="state-card state-card--solid">
+              <span class="state-label">Always offline</span>
+              <ul>
+                <li>Prayer times</li>
+                <li>Adhan reminders after scheduling</li>
+                <li>Qibla bearing</li>
+                <li>Hijri date</li>
+                <li>Quran Arabic text</li>
+              </ul>
+            </article>
+            <article class="state-card">
+              <span class="state-label">Offline after download</span>
+              <ul>
+                <li>Quran translations</li>
+                <li>Sunni Hadith Finder packs</li>
+                <li>Planned learning packs</li>
+                <li>Planned dua and dhikr packs</li>
+              </ul>
+            </article>
+            <article class="state-card">
+              <span class="state-label">Optional online only</span>
+              <ul>
+                <li>Hadith pack installs and updates</li>
+                <li>RevenueCat entitlement checks</li>
+                <li>Scholar feed refresh</li>
+                <li>BYOK AI assistant requests</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="proof">
+          <div class="section-head">
+            <p class="eyebrow">Provable right now</p>
+            <h2>Claims that are meant to be checked, not just repeated</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="signal-card">
+              <span class="card-kicker">Current runtime posture</span>
+              <h3>The free core does not need a server</h3>
+              <p>
+                Prayer times, adhan scheduling after setup, qibla bearing,
+                Hijri date, and Quran Arabic are treated as local-first
+                features.
+              </p>
+              <a
+                class="inline-link"
+                href="https://github.com/leggoboyo/ummah-app/blob/main/docs/privacy_model.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Read the privacy model
+              </a>
+            </article>
+            <article class="signal-card">
+              <span class="card-kicker">Current dependency posture</span>
+              <h3>No analytics SDK is part of the current app manifests</h3>
+              <p>
+                The repo-reality audit tracks which third-party packages can
+                transmit data off-device and explicitly calls out that analytics
+                and telemetry remain disabled by default.
+              </p>
+              <a
+                class="inline-link"
+                href="https://github.com/leggoboyo/ummah-app/blob/main/docs/repo_reality_report.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Inspect the repo audit
+              </a>
+            </article>
+            <article class="signal-card">
+              <span class="card-kicker">Current cloud boundary</span>
+              <h3>Optional infrastructure is scoped to optional features</h3>
+              <p>
+                The Cloudflare Worker, R2 bucket, and KV store are intended for
+                remote Hadith pack delivery only. The free worship core should
+                keep working if that service is unavailable.
+              </p>
+              <a
+                class="inline-link"
+                href="https://github.com/leggoboyo/ummah-app/blob/main/docs/cloudflare_cost_model.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Read the cost model
+              </a>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="eyebrow">Verification map</p>
+            <h2>If a claim matters, there should be a direct place to inspect it</h2>
+          </div>
+          <div class="verify-grid">
+            <article class="verify-card">
+              <span class="layer-tag">Privacy and offline</span>
+              <h3>Start with the runtime contract</h3>
+              <p>
+                The privacy model explains what stays on-device, what leaves
+                only when the user explicitly triggers an optional feature, and
+                how the app distinguishes always-offline from offline-after-download.
+              </p>
+              <a
+                class="inline-link"
+                href="https://github.com/leggoboyo/ummah-app/blob/main/docs/privacy_model.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open the privacy model
+              </a>
+            </article>
+            <article class="verify-card">
+              <span class="layer-tag">Code reality</span>
+              <h3>Then inspect the repo-backed audit</h3>
+              <p>
+                The repo reality report maps real files, network surfaces,
+                permissions, and third-party packages so the public claims can
+                be compared against actual code.
+              </p>
+              <a
+                class="inline-link"
+                href="https://github.com/leggoboyo/ummah-app/blob/main/docs/repo_reality_report.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open the repo reality report
+              </a>
+            </article>
+            <article class="verify-card">
+              <span class="layer-tag">Source material</span>
+              <h3>Then inspect source and pack metadata</h3>
+              <p>
+                Canonical source pages document pack IDs, versions, SHA-256
+                hashes, attribution requirements, and official source links for
+                shipped or planned republished content.
+              </p>
+              <a
+                class="inline-link"
+                href="https://github.com/leggoboyo/ummah-app/blob/main/docs/sources/index.md"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open the source index
+              </a>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="architecture">
+          <div class="section-head">
+            <p class="eyebrow">Structure</p>
+            <h2>A mobile app first, with optional infrastructure kept on the edge</h2>
+          </div>
+          <div class="architecture-grid">
+            <article class="architecture-card architecture-card--primary">
+              <span class="layer-tag">App shell</span>
+              <h3><code>mobile/app</code></h3>
+              <p>
+                Onboarding, navigation, settings, Hadith Finder UI, notification
+                orchestration, diagnostics, and composition of the feature
+                packages.
+              </p>
+            </article>
+            <article class="architecture-card">
+              <span class="layer-tag">Shared core</span>
+              <h3><code>packages/core</code></h3>
+              <p>
+                Shared models, module registry, source metadata, entitlements,
+                storage contracts, and cross-feature primitives.
+              </p>
+            </article>
+            <article class="architecture-card">
+              <span class="layer-tag">Feature packages</span>
+              <h3><code>features/*</code></h3>
+              <p>
+                Prayer, qibla, Quran, Hadith, fiqh, subscriptions, AI
+                assistants, and scholar feeds are separated into packages so the
+                app shell composes them without turning one controller into a
+                god-object.
+              </p>
+            </article>
+            <article class="architecture-card architecture-card--accent">
+              <span class="layer-tag">Optional edge services</span>
+              <h3><code>services/content-pack-worker</code></h3>
+              <p>
+                Cloudflare Worker + R2 + KV exist only for optional remote
+                Hadith pack manifests, access grants, and downloads. The free
+                core should keep working if this service is unavailable.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="eyebrow">Public docs tied to code</p>
+            <h2>Not just an app-store narrative</h2>
+          </div>
+          <div class="card-grid two-up">
+            <a
+              class="proof-card"
+              href="https://github.com/leggoboyo/ummah-app/blob/main/docs/repo_reality_report.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="card-kicker">Repo audit</span>
+              <h3>Repo Reality Report</h3>
+              <p>
+                Where the network calls live, which permissions exist, which
+                third-party packages can send data off-device, and where app
+                identifiers are created and stored.
+              </p>
+            </a>
+            <a
+              class="proof-card"
+              href="https://github.com/leggoboyo/ummah-app/blob/main/docs/privacy_model.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="card-kicker">Privacy</span>
+              <h3>Privacy Model</h3>
+              <p>
+                What stays local, what leaves the device only when explicitly
+                needed, and how the app distinguishes always-offline features
+                from optional online ones.
+              </p>
+            </a>
+            <a
+              class="proof-card"
+              href="https://github.com/leggoboyo/ummah-app/blob/main/docs/security_model.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="card-kicker">Security</span>
+              <h3>Security Model</h3>
+              <p>
+                Trust boundaries, secure storage posture, Worker scope, billing
+                boundaries, and how signed content-pack links are treated.
+              </p>
+            </a>
+            <a
+              class="proof-card"
+              href="https://github.com/leggoboyo/ummah-app/blob/main/docs/cloudflare_cost_model.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="card-kicker">Cost</span>
+              <h3>Cloudflare Cost Model</h3>
+              <p>
+                Why the optional Hadith infrastructure is designed to fail
+                closed under free-tier guardrails instead of silently growing
+                into a surprise bill.
+              </p>
+            </a>
+            <a
+              class="proof-card"
+              href="https://github.com/leggoboyo/ummah-app/blob/main/docs/launch_readiness_checklist.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="card-kicker">Launch</span>
+              <h3>Launch Readiness Checklist</h3>
+              <p>
+                Practical checks for notification reliability, source
+                attribution, entitlement safety, and offline guarantees before
+                wider release.
+              </p>
+            </a>
+            <a
+              class="proof-card"
+              href="https://github.com/leggoboyo/ummah-app/blob/main/docs/advancement_roadmap.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span class="card-kicker">Roadmap</span>
+              <h3>Module & Pack Roadmap</h3>
+              <p>
+                Which modules are core, which are optional, which are blocked,
+                and what their privacy and network requirements are supposed to
+                be.
+              </p>
+            </a>
+          </div>
+        </section>
+
+        <section class="section" id="sources">
+          <div class="section-head">
+            <p class="eyebrow">Source materials</p>
+            <h2>Canonical texts and republished content should stay attributable</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="source-card">
+              <h3>Tanzil Quran text</h3>
+              <p>
+                Quran Arabic text is tracked with Tanzil attribution and version
+                expectations. Canonical displayed text should remain verbatim.
+              </p>
+              <div class="link-stack">
+                <a href="https://tanzil.ir/docs/text_license" target="_blank" rel="noreferrer">Text license</a>
+                <a href="https://tanzil.co/download/" target="_blank" rel="noreferrer">Download terms</a>
+                <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/sources/packs/quran_arabic.md" target="_blank" rel="noreferrer">Repo-tracked Quran source page</a>
+              </div>
+            </article>
+            <article class="source-card">
+              <h3>QuranEnc translations</h3>
+              <p>
+                Quran translations remain dynamic source-backed content for now,
+                with version and attribution surfaced in the app and repo docs.
+              </p>
+              <div class="link-stack">
+                <a href="https://quranenc.com/en/pdf" target="_blank" rel="noreferrer">Official terms</a>
+                <a href="https://quranenc.com/en/home" target="_blank" rel="noreferrer">QuranEnc home</a>
+                <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/sources/index.md" target="_blank" rel="noreferrer">Repo source index</a>
+              </div>
+            </article>
+            <article class="source-card">
+              <h3>HadeethEnc hadith packs</h3>
+              <p>
+                Sunni Hadith Finder uses HadeethEnc language packs stored
+                verbatim on-device after download. Public source links and pack
+                versions are part of the transparency model.
+              </p>
+              <div class="link-stack">
+                <a href="https://hadeethenc.com/en/home" target="_blank" rel="noreferrer">HadeethEnc home</a>
+                <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/sources/packs/hadith_pack__en.md" target="_blank" rel="noreferrer">English hadith pack</a>
+                <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/sources/packs/hadith_pack__ar.md" target="_blank" rel="noreferrer">Arabic hadith pack</a>
+                <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/sources/packs/hadith_pack__ur.md" target="_blank" rel="noreferrer">Urdu hadith pack</a>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="cost">
+          <div class="section-head">
+            <p class="eyebrow">Low-cost posture</p>
+            <h2>Designed to avoid both surprise bills and sluggish app behavior</h2>
+          </div>
+          <div class="card-grid two-up">
+            <article class="info-card">
+              <h3>Low monetary cost</h3>
+              <ul class="tight-list">
+                <li>No required backend for the free worship core.</li>
+                <li>Optional Hadith infrastructure is scoped to packs only.</li>
+                <li>BYOK AI keeps inference optional and founder cost near zero.</li>
+                <li>This public site is static and GitHub Pages-friendly.</li>
+              </ul>
+            </article>
+            <article class="info-card">
+              <h3>Low performance cost</h3>
+              <ul class="tight-list">
+                <li>Large study content is modular instead of bundled by default.</li>
+                <li>Startup should not block on optional remote services.</li>
+                <li>On-device search and local SQLite keep repeated use fast.</li>
+                <li>No analytics or ad SDKs are in the current app manifests.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="eyebrow">How to verify it yourself</p>
+            <h2>Three quick checks for anyone who wants more than marketing copy</h2>
+          </div>
+          <div class="verify-steps">
+            <article class="step-card">
+              <span class="step-index">01</span>
+              <h3>Read the repo reality report</h3>
+              <p>
+                That is the most direct map of package IDs, network surfaces,
+                permissions, and optional service boundaries.
+              </p>
+            </article>
+            <article class="step-card">
+              <span class="step-index">02</span>
+              <h3>Read the source pages</h3>
+              <p>
+                The generated source pages show the pack versions, hashes,
+                licenses, attribution requirements, and upstream providers.
+              </p>
+            </article>
+            <article class="step-card">
+              <span class="step-index">03</span>
+              <h3>Inspect the repo structure</h3>
+              <p>
+                The codebase separates the app shell, shared core, feature
+                packages, and optional edge services so the free core is not
+                architected like a backend client.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section section--closing">
+          <div class="closing-card">
+            <p class="eyebrow">A few things the app is trying not to become</p>
+            <h2>Not an attention funnel. Not a telemetry box. Not a black box.</h2>
+            <div class="closing-grid">
+              <p>
+                The free core is meant to stay useful without an app-level
+                account.
+              </p>
+              <p>
+                Analytics and crash reporting are not supposed to be silently on
+                by default.
+              </p>
+              <p>
+                Religious sources should be attributable, versioned, and easy to
+                inspect.
+              </p>
+              <p>
+                Optional cloud features should fail softly without taking prayer,
+                qibla, or Quran Arabic down with them.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p>
+          Built from the public repo and docs for Ummah App.
+          <span id="site-year"></span>
+        </p>
+        <div class="footer-links">
+          <a href="https://github.com/leggoboyo/ummah-app" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/repo_reality_report.md" target="_blank" rel="noreferrer">Repo audit</a>
+          <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/sources/index.md" target="_blank" rel="noreferrer">Source index</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

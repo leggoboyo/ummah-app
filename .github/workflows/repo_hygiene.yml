@@ -1,0 +1,28 @@
+name: Repo Hygiene
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: repo-hygiene-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workflow-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint GitHub workflows
+        uses: docker://rhysd/actionlint:latest
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan tracked files for secret material
+        run: python3 ./scripts/check_tracked_secret_files.py

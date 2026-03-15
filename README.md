@@ -1,39 +1,69 @@
 # Ummah App
 
-Privacy-first, offline-first Flutter application for iOS and Android focused on reliable Islamic essentials first: prayer times, adhan alarms, qibla, and a respectful multi-school knowledge model that can grow into Quran, hadith, fiqh, and AI modules.
+Ummah App is a privacy-first, offline-first Flutter application for iOS and Android. The project is being built around a narrow promise: keep the free worship core useful without an app account, without analytics by default, and without turning the app into a backend-heavy product.
 
-## Current Status
+## Current product shape
 
-The repository now contains:
+- Free core:
+  - prayer times
+  - adhan reminders
+  - qibla
+  - Hijri date
+  - Quran Arabic reading
+- Optional modules:
+  - Quran translations cached locally after user download
+  - Sunni Hadith Finder with optional language packs
+  - scholar feed refresh
+  - BYOK AI assistant
+  - paid billing for optional modules
 
-- product and technical specs in [`docs/product_spec.md`](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/product_spec.md), [`docs/technical_spec.md`](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/technical_spec.md), and [`docs/build_plan.md`](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/build_plan.md)
-- a Flutter-oriented monorepo scaffold with `packages/core`, `features/*`, and `mobile/app`
-- Milestone 1 domain logic for prayer calculation, qibla direction, and notification window planning
+## Repo layout
 
-## Workspace Layout
+- `mobile/app` — Flutter app shell
+- `packages/core` — shared models, storage ports, entitlements, and common runtime contracts
+- `features/prayer` — prayer calculations, notification planning, fiqh prayer settings
+- `features/qibla` — qibla math and presentation models
+- `features/quran` — bundled Quran Arabic plus translation sync/cache logic
+- `features/hadith` — Sunni Hadith Finder, pack ingestion, and local search
+- `features/fiqh` — fiqh guide and bundled reference content
+- `features/scholar_feed` — optional public-source feed metadata
+- `features/ai_assistant` — optional BYOK assistant
+- `features/subscriptions` — local preview billing and RevenueCat integration
+- `services/content-pack-worker` — optional Cloudflare Worker for remote hadith pack manifests and signed downloads
+- `website` — GitHub Pages trust site
 
-- `mobile/app`: Flutter application shell and widget tests
-- `packages/core`: shared models, storage interfaces, settings, logging, and entitlements
-- `features/prayer`: prayer domain models, fiqh profiles, local calculation engine, and notification planning
-- `features/qibla`: qibla bearing math and presentation-friendly models
-- `features/quran`: placeholder package for Milestone 2
-- `features/hadith`: Sunni Hadith finder, offline SQLite/FTS search, and remote content-pack ingestion
-- `features/fiqh`: placeholder package for Milestone 4
-- `features/ai_assistant`: placeholder package for Milestone 6
-- `features/subscriptions`: placeholder package for Milestone 5
-- `services/content-pack-worker`: Cloudflare Worker for remote content-pack manifests and signed downloads
+## Current engineering posture
 
-## Tooling Status
+- Android support floor: API 24 / Android 7+
+- Supported runtime UI languages: English, Arabic, Urdu
+- Free-core bootstrap is intended to stay backend-optional
+- Billing is lazy-loaded only when a user opens Plans & Unlocks, restore purchases, or a paid-gated optional module
+- No analytics or telemetry SDK is active in the current build
 
-The machine now has Flutter, Android tooling, Xcode, CocoaPods, and an iOS Simulator runtime installed. `flutter doctor -v` is clean, the workspace bootstraps successfully, `flutter analyze` passes across packages, and the current test suite passes.
+## Key docs
 
-## Next Recommended Step
+- [Privacy model](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/privacy_model.md)
+- [Security model](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/security_model.md)
+- [Release readiness](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/release_readiness.md)
+- [Readiness audit](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/readiness_audit.md)
+- [Launch blockers](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/launch_blockers.md)
+- [Public trust gaps](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/public_trust_gaps.md)
+- [Developer guide](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/developer_guide.md)
+- [Manual QA checklist](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/manual_qa_checklist.md)
+- [Atlas readiness checks](/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/atlas_readiness_checks.md)
 
-To validate the workspace locally, run:
+## Local commands
 
 ```bash
-dart pub get
-dart run melos bootstrap
-dart run melos exec -c 1 -- flutter analyze
-dart run melos exec -c 1 --dir-exists=test -- flutter test
+make bootstrap
+make analyze
+make test
+make worker-test
+make secret-scan
+make size-report
+make site-preview
 ```
+
+## Public trust site
+
+The repository includes a tracked static trust site in `website/` for GitHub Pages. It is meant to be evidence-driven rather than marketing-driven and links directly to the repo docs that back up public claims.

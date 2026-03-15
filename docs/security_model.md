@@ -14,6 +14,7 @@
 
 ## Storage policy
 - BYOK secrets go into `flutter_secure_storage`.
+- the local app user identifier for optional billing / pack access now also goes into secure storage.
 - general settings go into shared preferences.
 - offline corpora and indexes live in local SQLite databases.
 - no server-side profile store exists for the free core.
@@ -35,7 +36,9 @@
 - access grants are signed and short-lived
 - download signatures now bind pack id, object key, app user id, and expiry
 - download requests re-check the manifest/object mapping before reading from R2
+- signed download responses are served with `Cache-Control: no-store`
 - starter-pack claims are idempotent and keyed by app user id
+- starter-pack daily budget enforcement is a best-effort KV cost guardrail, not a strongly consistent abuse counter
 - paid-pack access should fail as unavailable when billing-side configuration is missing
 
 ## Security review rules for future changes

@@ -28,8 +28,6 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Ummah App uses your location to calculate prayer times and qibla accurately when you choose device GPS.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Ummah App uses your location to calculate prayer times and qibla accurately when you choose device GPS.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

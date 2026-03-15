@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 
 import '../bootstrap/app_controller.dart';
@@ -42,6 +43,19 @@ class SettingsHubScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 12),
+              _SettingsTile(
+                icon: Icons.speed_outlined,
+                title: 'Performance mode',
+                subtitle:
+                    'Current mode: ${_performanceLabel(appController.uiPerformanceModeOverride, appController.uiPerformanceMode)}.',
+                onTap: () async {
+                  await _showPerformanceModePicker(
+                    context,
+                    appController,
+                  );
+                },
               ),
               const SizedBox(height: 12),
               _SettingsTile(
@@ -96,6 +110,94 @@ class SettingsHubScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  static String _performanceLabel(
+    UiPerformanceMode? overrideMode,
+    UiPerformanceMode resolvedMode,
+  ) {
+    if (overrideMode == null) {
+      return 'Automatic (${resolvedMode.name})';
+    }
+    return overrideMode.name;
+  }
+
+  static Future<void> _showPerformanceModePicker(
+    BuildContext context,
+    AppController appController,
+  ) async {
+    final UiPerformanceMode? selected = await showModalBottomSheet<UiPerformanceMode?>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext context) {
+        final UiPerformanceMode? currentOverride =
+            appController.uiPerformanceModeOverride;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _PerformanceModeTile(
+                title: 'Automatic',
+                subtitle:
+                    'Use lean mode on lower-end Android devices and standard mode elsewhere.',
+                selected: currentOverride == null,
+                onTap: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              _PerformanceModeTile(
+                title: 'Standard',
+                subtitle: 'Use the full visual layout on this device.',
+                selected: currentOverride == UiPerformanceMode.standard,
+                onTap: () {
+                  Navigator.of(context).pop(UiPerformanceMode.standard);
+                },
+              ),
+              _PerformanceModeTile(
+                title: 'Lean',
+                subtitle:
+                    'Prefer lighter visuals and lower runtime cost on this device.',
+                selected: currentOverride == UiPerformanceMode.lean,
+                onTap: () {
+                  Navigator.of(context).pop(UiPerformanceMode.lean);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected == appController.uiPerformanceModeOverride) {
+      return;
+    }
+    await appController.updateUiPerformanceModeOverride(selected);
+  }
+}
+
+class _PerformanceModeTile extends StatelessWidget {
+  const _PerformanceModeTile({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        selected ? Icons.radio_button_checked : Icons.radio_button_off,
+      ),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      onTap: onTap,
     );
   }
 }

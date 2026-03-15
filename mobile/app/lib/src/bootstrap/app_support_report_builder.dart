@@ -50,7 +50,7 @@ class AppSupportReportBuilder {
       'Billing provider: ${billingProviderKind.label}',
       'Billing availability: ${billingAvailability.label}',
       'Billing status: ${subscriptionStatusMessage ?? 'No status yet'}',
-      'RevenueCat App User ID: ${DiagnosticsRedactor.formatIdentifier(revenueCatAppUserId, includeSensitiveDetails: includeSensitiveDetails)}',
+      'App User ID: ${DiagnosticsRedactor.formatIdentifier(revenueCatAppUserId, includeSensitiveDetails: includeSensitiveDetails)}',
       'Notification health: ${notificationHealth?.status.name ?? 'unknown'}',
       'Notification message: ${notificationHealth?.message ?? 'No message yet'}',
       'Resolved location: ${DiagnosticsRedactor.redactText(locationSummary)}',

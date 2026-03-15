@@ -1,15 +1,6 @@
 enum RetrievedPassageSourceKind {
   quran,
-  hadith;
-
-  String get label {
-    switch (this) {
-      case RetrievedPassageSourceKind.quran:
-        return 'Quran';
-      case RetrievedPassageSourceKind.hadith:
-        return 'Hadith';
-    }
-  }
+  hadith,
 }
 
 class RetrievedPassage {

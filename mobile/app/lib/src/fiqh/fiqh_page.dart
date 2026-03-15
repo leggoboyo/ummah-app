@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 import 'package:fiqh/fiqh.dart';
 import 'package:flutter/material.dart';
-import 'package:prayer/prayer.dart';
 
 import 'fiqh_controller.dart';
 
@@ -573,7 +572,7 @@ class _SourceVersionsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              'Sources & Versions',
+              'Sources & Licenses',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),

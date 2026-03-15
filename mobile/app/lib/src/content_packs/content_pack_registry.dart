@@ -2,20 +2,6 @@ import 'package:core/core.dart';
 import 'package:hadith/hadith.dart';
 import 'package:quran/quran.dart';
 
-class AppContentPackIds {
-  static const String corePrayer = 'core_prayer';
-  static const String quranArabic = 'quran_arabic';
-  static const String quranTranslationDefault = 'quran_translation:default';
-  static const String hadithPackDefault = 'hadith_pack:default';
-  static const String quranAudioStarter = 'quran_audio:starter';
-
-  static String quranTranslationLanguage(String languageCode) =>
-      'quran_translation:$languageCode';
-
-  static String hadithPackLanguage(String languageCode) =>
-      'hadith_pack:$languageCode';
-}
-
 class ContentPackRegistry {
   ContentPackRegistry({
     QuranRepository? quranRepository,

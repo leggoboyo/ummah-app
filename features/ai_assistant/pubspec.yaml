@@ -11,10 +11,6 @@ dependencies:
     sdk: flutter
   core:
     path: ../../packages/core
-  quran:
-    path: ../../features/quran
-  hadith:
-    path: ../../features/hadith
   http: ^1.6.0
 
 dev_dependencies:

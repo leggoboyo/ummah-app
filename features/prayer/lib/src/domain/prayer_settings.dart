@@ -1,4 +1,5 @@
-import 'fiqh_profile.dart';
+import 'package:core/core.dart';
+
 import 'high_latitude_rule.dart';
 import 'prayer_calculation_method.dart';
 import 'prayer_name.dart';

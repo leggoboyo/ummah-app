@@ -1,0 +1,189 @@
+{
+  "generated_label": "Bundled with this build from canonical feature-local pack manifests.",
+  "packs": [
+    {
+      "pack_id": "fiqh_pack:starter_reference",
+      "module_id": "basics_learning",
+      "title": "Fiqh Starter Reference Pack",
+      "summary": "Bundled reference pack with cited starter guidance and explicit non-fatwa posture.",
+      "version": "1.0.0",
+      "locales": [
+        "en"
+      ],
+      "size_bytes": 13278,
+      "sha256": "8e1c490b8c9a692457ffbda37e9013cd14e35a61c6e6134191d71d11614f1441",
+      "content_type": "json",
+      "delivery_type": "bundled",
+      "install_steps": [
+        "load bundled fiqh knowledge JSON into the local repository",
+        "render source references without claiming fatwa authority"
+      ],
+      "compatibility": [
+        "offline",
+        "starter_reference",
+        "non_fatwa"
+      ],
+      "artifact_path": "features/fiqh/assets/fiqh_knowledge_v1.json",
+      "sources": [
+        {
+          "name": "Ummah App curated starter pack",
+          "url": "https://github.com/leggoboyo/ummah-app",
+          "version": "2026.03-starter",
+          "license_summary": "Original app-authored explanatory text with cited Quran and hadith references.",
+          "attribution_required": true,
+          "no_modify_required": false,
+          "verbatim_only": false
+        }
+      ]
+    },
+    {
+      "pack_id": "hadith_pack:ar",
+      "module_id": "hadith_finder",
+      "title": "Sunni Hadith Pack (Arabic)",
+      "summary": "Official HadeethEnc Arabic pack for cited offline Sunni hadith lookup.",
+      "version": "1.7.0",
+      "locales": [
+        "ar"
+      ],
+      "size_bytes": 3025482,
+      "sha256": "ea1508a31a6d0f7b038e4ad688fabf98a7b10afabc68bf32b3292870144e3d45",
+      "content_type": "archive",
+      "delivery_type": "remoteOptional",
+      "install_steps": [
+        "download the remote archive after explicit user action",
+        "verify sha256 before import into the local hadith database",
+        "keep displayed hadith text verbatim from the installed pack"
+      ],
+      "compatibility": [
+        "offline_after_install",
+        "starter_free_eligible",
+        "sunni_hadith"
+      ],
+      "artifact_path": "features/hadith/assets/packs/hadeethenc_ar_v1.7.0.json.gz",
+      "remote_object_key": "hadith/ar/v1.7.0/pack.json.gz",
+      "required_entitlement_key": "hadith_plus",
+      "sources": [
+        {
+          "name": "HadeethEnc",
+          "url": "https://hadeethenc.com/ar/home",
+          "version": "1.7.0",
+          "license_summary": "Official HadeethEnc republication with attribution, versioning, and no-modification constraints.",
+          "attribution_required": true,
+          "no_modify_required": true,
+          "verbatim_only": true
+        }
+      ]
+    },
+    {
+      "pack_id": "hadith_pack:en",
+      "module_id": "hadith_finder",
+      "title": "Sunni Hadith Pack (English)",
+      "summary": "Official HadeethEnc English starter pack for cited offline Sunni hadith lookup.",
+      "version": "1.24.0",
+      "locales": [
+        "en"
+      ],
+      "size_bytes": 3164541,
+      "sha256": "384d3db68cf8ded5590b49fed8a29199d098c548ff994a5b2a82afd832254aec",
+      "content_type": "archive",
+      "delivery_type": "remoteOptional",
+      "install_steps": [
+        "download the remote archive after explicit user action",
+        "verify sha256 before import into the local hadith database",
+        "keep displayed hadith text verbatim from the installed pack"
+      ],
+      "compatibility": [
+        "offline_after_install",
+        "starter_free_eligible",
+        "sunni_hadith"
+      ],
+      "artifact_path": "features/hadith/assets/packs/hadeethenc_en_v1.24.0.json.gz",
+      "remote_object_key": "hadith/en/v1.24.0/pack.json.gz",
+      "required_entitlement_key": "hadith_plus",
+      "sources": [
+        {
+          "name": "HadeethEnc",
+          "url": "https://hadeethenc.com/en/home",
+          "version": "1.24.0",
+          "license_summary": "Official HadeethEnc republication with attribution, versioning, and no-modification constraints.",
+          "attribution_required": true,
+          "no_modify_required": true,
+          "verbatim_only": true
+        }
+      ]
+    },
+    {
+      "pack_id": "hadith_pack:ur",
+      "module_id": "hadith_finder",
+      "title": "Sunni Hadith Pack (Urdu)",
+      "summary": "Official HadeethEnc Urdu pack for cited offline Sunni hadith lookup.",
+      "version": "1.33.0",
+      "locales": [
+        "ur"
+      ],
+      "size_bytes": 3076209,
+      "sha256": "4e30dedc5cca6f9b67b15f86493275cdf74d02c97105637fc56070d137c03396",
+      "content_type": "archive",
+      "delivery_type": "remoteOptional",
+      "install_steps": [
+        "download the remote archive after explicit user action",
+        "verify sha256 before import into the local hadith database",
+        "keep displayed hadith text verbatim from the installed pack"
+      ],
+      "compatibility": [
+        "offline_after_install",
+        "starter_free_eligible",
+        "sunni_hadith"
+      ],
+      "artifact_path": "features/hadith/assets/packs/hadeethenc_ur_v1.33.0.json.gz",
+      "remote_object_key": "hadith/ur/v1.33.0/pack.json.gz",
+      "required_entitlement_key": "hadith_plus",
+      "sources": [
+        {
+          "name": "HadeethEnc",
+          "url": "https://hadeethenc.com/ur/home",
+          "version": "1.33.0",
+          "license_summary": "Official HadeethEnc republication with attribution, versioning, and no-modification constraints.",
+          "attribution_required": true,
+          "no_modify_required": true,
+          "verbatim_only": true
+        }
+      ]
+    },
+    {
+      "pack_id": "quran_arabic",
+      "module_id": "quran_reader",
+      "title": "Quran Arabic Text",
+      "summary": "Bundled Tanzil Uthmani Arabic text for offline Quran reading from first launch.",
+      "version": "1.1.0",
+      "locales": [
+        "ar"
+      ],
+      "size_bytes": 1396087,
+      "sha256": "6933e133dd56db778c801bf738848454e43648105a151e8d84d86a7cae39ec5f",
+      "content_type": "text",
+      "delivery_type": "bundled",
+      "install_steps": [
+        "seed bundled corpus into the local Quran database on first launch",
+        "preserve canonical Arabic text verbatim when displayed"
+      ],
+      "compatibility": [
+        "offline",
+        "base_reader",
+        "canonical_text"
+      ],
+      "artifact_path": "features/quran/assets/quran_uthmani_v1.1.txt",
+      "sources": [
+        {
+          "name": "Tanzil Project",
+          "url": "https://tanzil.net/download/",
+          "version": "1.1",
+          "license_summary": "Verbatim Quran text redistribution with attribution and link-back for updates.",
+          "attribution_required": true,
+          "no_modify_required": true,
+          "verbatim_only": true
+        }
+      ]
+    }
+  ]
+}

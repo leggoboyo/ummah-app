@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:core/core.dart';
 import 'package:fiqh/fiqh.dart';
-import 'package:prayer/prayer.dart';
 import 'package:test/test.dart';
 
 void main() {

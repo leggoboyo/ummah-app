@@ -1,0 +1,36 @@
+{
+  "pack_id": "hadith_pack:ar",
+  "module_id": "hadith_finder",
+  "title": "Sunni Hadith Pack (Arabic)",
+  "summary": "Official HadeethEnc Arabic pack for cited offline Sunni hadith lookup.",
+  "version": "1.7.0",
+  "locales": ["ar"],
+  "size_bytes": 3025482,
+  "sha256": "ea1508a31a6d0f7b038e4ad688fabf98a7b10afabc68bf32b3292870144e3d45",
+  "content_type": "archive",
+  "delivery_type": "remoteOptional",
+  "install_steps": [
+    "download the remote archive after explicit user action",
+    "verify sha256 before import into the local hadith database",
+    "keep displayed hadith text verbatim from the installed pack"
+  ],
+  "compatibility": [
+    "offline_after_install",
+    "starter_free_eligible",
+    "sunni_hadith"
+  ],
+  "artifact_path": "features/hadith/assets/packs/hadeethenc_ar_v1.7.0.json.gz",
+  "remote_object_key": "hadith/ar/v1.7.0/pack.json.gz",
+  "required_entitlement_key": "hadith_plus",
+  "sources": [
+    {
+      "name": "HadeethEnc",
+      "url": "https://hadeethenc.com/ar/home",
+      "version": "1.7.0",
+      "license_summary": "Official HadeethEnc republication with attribution, versioning, and no-modification constraints.",
+      "attribution_required": true,
+      "no_modify_required": true,
+      "verbatim_only": true
+    }
+  ]
+}

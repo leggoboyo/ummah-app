@@ -1,4 +1,4 @@
-import 'package:prayer/prayer.dart';
+import 'package:core/core.dart';
 
 import 'evidence_reference.dart';
 import 'fiqh_classification.dart';

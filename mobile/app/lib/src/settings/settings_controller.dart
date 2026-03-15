@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:core/core.dart';
 import 'package:fiqh/fiqh.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:hadith/hadith.dart';
 import 'package:quran/quran.dart';
 import 'package:scholar_feed/scholar_feed.dart';
@@ -15,6 +18,10 @@ class SettingsController extends ChangeNotifier {
     FiqhRepository? fiqhRepository,
     ScholarFeedRepository? scholarFeedRepository,
     ContentPackRegistry? contentPackRegistry,
+    AppModuleRegistry? moduleRegistry,
+    Set<AppEntitlement> activeEntitlements = const <AppEntitlement>{
+      AppEntitlement.coreFree,
+    },
     this.preferredLanguageCode = 'en',
   })  : _quranRepository = quranRepository ?? QuranRepository(),
         _hadithRepository = hadithRepository ?? HadithRepository(),
@@ -23,14 +30,21 @@ class SettingsController extends ChangeNotifier {
             ScholarFeedRepository(
               keyValueStore: SharedPreferencesKeyValueStore(),
             ),
-        _contentPackRegistry = contentPackRegistry ?? ContentPackRegistry();
+        _contentPackRegistry = contentPackRegistry ?? ContentPackRegistry(),
+        _moduleRegistry = moduleRegistry ?? buildDefaultAppModuleRegistry(),
+        _activeEntitlements = activeEntitlements;
 
   final QuranRepository _quranRepository;
   final HadithRepository _hadithRepository;
   final FiqhRepository _fiqhRepository;
   final ScholarFeedRepository _scholarFeedRepository;
   final ContentPackRegistry _contentPackRegistry;
+  final AppModuleRegistry _moduleRegistry;
+  final Set<AppEntitlement> _activeEntitlements;
   final String preferredLanguageCode;
+
+  static const String _sourceCatalogAsset =
+      'assets/generated/source_catalog.json';
 
   bool isReady = false;
   bool isWorking = false;
@@ -41,6 +55,8 @@ class SettingsController extends ChangeNotifier {
   List<SourceVersion> fiqhSourceVersions = const <SourceVersion>[];
   List<InstalledContentPack> installedContentPacks =
       const <InstalledContentPack>[];
+  List<ResolvedAppModule> moduleDirectory = const <ResolvedAppModule>[];
+  PackCatalog? packCatalog;
   List<ScholarFeedSource> scholarFeedSources = const <ScholarFeedSource>[];
   Set<String> followedScholarFeedSources = <String>{};
   DateTime? scholarFeedLastSyncedAt;
@@ -72,6 +88,13 @@ class SettingsController extends ChangeNotifier {
       installedContentPacks = await _contentPackRegistry.getInstalledPacks(
         preferredLanguageCode: preferredLanguageCode,
       );
+      moduleDirectory = _moduleRegistry.resolve(
+        installedPackIds: installedContentPacks
+            .map((InstalledContentPack pack) => pack.packId)
+            .toSet(),
+        activeEntitlements: _activeEntitlements,
+      );
+      packCatalog = await _loadPackCatalog();
 
       scholarFeedSources = await _scholarFeedRepository.getAvailableSources();
       final ScholarFeedSyncResult cached =
@@ -84,6 +107,17 @@ class SettingsController extends ChangeNotifier {
     } finally {
       isWorking = false;
       notifyListeners();
+    }
+  }
+
+  Future<PackCatalog?> _loadPackCatalog() async {
+    try {
+      final String raw = await rootBundle.loadString(_sourceCatalogAsset);
+      return PackCatalog.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
+    } catch (_) {
+      return null;
     }
   }
 

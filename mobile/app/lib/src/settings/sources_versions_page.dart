@@ -28,6 +28,8 @@ class _SourcesAndVersionsScreenState extends State<SourcesAndVersionsScreen> {
     super.initState();
     _controller = SettingsController(
       preferredLanguageCode: widget.appController.languageCode,
+      moduleRegistry: widget.appController.moduleRegistry,
+      activeEntitlements: widget.appController.entitlements,
     );
     Future<void>.microtask(_controller.initialize);
   }
@@ -46,7 +48,7 @@ class _SourcesAndVersionsScreenState extends State<SourcesAndVersionsScreen> {
       builder: (BuildContext context, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Sources & Versions'),
+            title: const Text('Sources & Licenses'),
             actions: <Widget>[
               IconButton(
                 onPressed: _controller.isWorking ? null : _controller.refresh,
@@ -80,7 +82,22 @@ class _SourcesAndVersionsScreenState extends State<SourcesAndVersionsScreen> {
                       installedPacks: _controller.installedContentPacks,
                     ),
                     const SizedBox(height: 12),
+                    _ModuleDirectoryCard(
+                      modules: _controller.moduleDirectory,
+                    ),
+                    const SizedBox(height: 12),
                     const _ProjectSourceDirectoryCard(),
+                    const SizedBox(height: 12),
+                    if (_controller.packCatalog != null) ...<Widget>[
+                      _PackCatalogCard(
+                        packCatalog: _controller.packCatalog!,
+                        installedPackIds: _controller.installedContentPacks
+                            .map((InstalledContentPack pack) => pack.packId)
+                            .toSet(),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    const _DynamicSourceBackedContentCard(),
                     const SizedBox(height: 12),
                     _SourceSection(
                       title: 'Quran',
@@ -187,6 +204,10 @@ class _SourceVersionTile extends StatelessWidget {
           Text('Attribution: ${version.attribution}'),
           const SizedBox(height: 4),
           Text('Homepage: ${metadata.homepageUrl}'),
+          const SizedBox(height: 4),
+          Text(
+            'Verbatim only: ${metadata.verbatimOnly ? 'yes' : 'no'} • No modify: ${metadata.noModifyRequired ? 'yes' : 'no'}',
+          ),
           if (metadata.docsUrl != null) ...<Widget>[
             const SizedBox(height: 4),
             Text('Docs/API: ${metadata.docsUrl}'),
@@ -308,7 +329,7 @@ class _ProjectSourceDirectoryCard extends StatelessWidget {
               'Quran Arabic: Tanzil Project (bundled, verbatim)',
             ),
             Text(
-              'Quran translations: QuranEnc API (downloaded on demand, stored locally verbatim, version-tagged)',
+              'Quran translations: QuranEnc API sync today (downloaded on demand, stored locally verbatim, version-tagged, not yet a true pack artifact)',
             ),
             Text(
               'Sunni hadith: HadeethEnc official language packs (installed for offline use, stored verbatim)',
@@ -321,6 +342,198 @@ class _ProjectSourceDirectoryCard extends StatelessWidget {
             ),
             Text(
               'Fiqh starter pack: curated internal starter pack with cited references and explicit non-fatwa disclaimer',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModuleDirectoryCard extends StatelessWidget {
+  const _ModuleDirectoryCard({
+    required this.modules,
+  });
+
+  final List<ResolvedAppModule> modules;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Module directory',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            for (final ResolvedAppModule module in modules) ...<Widget>[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        Chip(label: Text(module.definition.kind.name)),
+                        Chip(label: Text(module.definition.releaseState.name)),
+                        Chip(
+                          label: Text(
+                            module.definition.networkRequirement.name,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      module.definition.title,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(module.definition.summary),
+                    const SizedBox(height: 8),
+                    Text(module.statusMessage ?? 'Ready on this device.'),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PackCatalogCard extends StatelessWidget {
+  const _PackCatalogCard({
+    required this.packCatalog,
+    required this.installedPackIds,
+  });
+
+  final PackCatalog packCatalog;
+  final Set<String> installedPackIds;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Canonical pack catalog',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(packCatalog.generatedLabel),
+            const SizedBox(height: 12),
+            for (final PackCatalogEntry pack in packCatalog.packs) ...<Widget>[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        Chip(label: Text(pack.moduleId)),
+                        Chip(label: Text(pack.deliveryType.name)),
+                        Chip(label: Text(pack.version)),
+                        Chip(
+                          label: Text(
+                            installedPackIds.contains(pack.packId)
+                                ? 'installed'
+                                : 'catalog only',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      pack.title,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(pack.summary),
+                    const SizedBox(height: 8),
+                    Text('Pack ID: ${pack.packId}'),
+                    const SizedBox(height: 4),
+                    Text('Locales: ${pack.locales.join(', ')}'),
+                    const SizedBox(height: 4),
+                    Text('SHA-256: ${pack.sha256}'),
+                    const SizedBox(height: 8),
+                    for (final PackSourceEntry source
+                        in pack.sources) ...<Widget>[
+                      Text(
+                        source.name,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Version: ${source.version}'),
+                      const SizedBox(height: 4),
+                      Text('URL: ${source.url}'),
+                      const SizedBox(height: 4),
+                      Text('License: ${source.licenseSummary}'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Attribution required: ${source.attributionRequired ? 'yes' : 'no'} • No modify: ${source.noModifyRequired ? 'yes' : 'no'} • Verbatim only: ${source.verbatimOnly ? 'yes' : 'no'}',
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DynamicSourceBackedContentCard extends StatelessWidget {
+  const _DynamicSourceBackedContentCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const <Widget>[
+            Text(
+              'Dynamic source-backed content',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'QuranEnc translations are still synced on demand and stored locally verbatim with version metadata, but they are not converted into true pack artifacts in this wave.',
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Scholar source feeds stay metadata-first and network-optional. The app links back to publishers instead of pretending the feed is a canonical local corpus.',
             ),
           ],
         ),
@@ -457,12 +670,16 @@ class _ProviderMetadata {
   const _ProviderMetadata({
     required this.label,
     required this.homepageUrl,
+    required this.verbatimOnly,
+    required this.noModifyRequired,
     this.docsUrl,
     this.reuseNote,
   });
 
   final String label;
   final String homepageUrl;
+  final bool verbatimOnly;
+  final bool noModifyRequired;
   final String? docsUrl;
   final String? reuseNote;
 }
@@ -473,6 +690,8 @@ _ProviderMetadata _providerMetadataFor(String providerKey) {
       return const _ProviderMetadata(
         label: 'QuranEnc',
         homepageUrl: 'https://quranenc.com',
+        verbatimOnly: true,
+        noModifyRequired: true,
         docsUrl: 'https://quranenc.com/api/v1/docs',
         reuseNote:
             'Translations are stored verbatim and version-tagged locally.',
@@ -481,6 +700,8 @@ _ProviderMetadata _providerMetadataFor(String providerKey) {
       return const _ProviderMetadata(
         label: 'Tanzil Project',
         homepageUrl: 'https://tanzil.net',
+        verbatimOnly: true,
+        noModifyRequired: true,
         docsUrl: 'https://tanzil.net/download/',
         reuseNote:
             'Bundled Arabic text is kept verbatim from the bundled source asset.',
@@ -489,6 +710,8 @@ _ProviderMetadata _providerMetadataFor(String providerKey) {
       return const _ProviderMetadata(
         label: 'HadeethEnc',
         homepageUrl: 'https://hadeethenc.com/en/home',
+        verbatimOnly: true,
+        noModifyRequired: true,
         docsUrl: 'https://documenter.getpostman.com/view/5211979/TVev3j7q',
         reuseNote:
             'Hadith text is stored verbatim from official HadeethEnc packs or public source data.',
@@ -496,7 +719,9 @@ _ProviderMetadata _providerMetadataFor(String providerKey) {
     case 'fiqh_pack':
       return const _ProviderMetadata(
         label: 'Fiqh starter pack',
-        homepageUrl: 'Local bundled data pack',
+        homepageUrl: 'https://github.com/leggoboyo/ummah-app',
+        verbatimOnly: false,
+        noModifyRequired: false,
         reuseNote:
             'Internal starter pack with cited references. Not a fatwa service.',
       );
@@ -504,6 +729,8 @@ _ProviderMetadata _providerMetadataFor(String providerKey) {
       return const _ProviderMetadata(
         label: 'Bundled or provider-managed source',
         homepageUrl: 'URL not recorded yet',
+        verbatimOnly: false,
+        noModifyRequired: false,
       );
   }
 }

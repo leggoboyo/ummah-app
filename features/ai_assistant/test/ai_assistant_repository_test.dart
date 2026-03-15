@@ -6,7 +6,7 @@ void main() {
   test('returns insufficient-evidence response when no local sources match',
       () async {
     final AiAssistantRepository repository = AiAssistantRepository(
-      retriever: _FakeRetriever(
+      sourcePort: _FakeRetriever(
         sources: const <RetrievedPassage>[],
         sourceVersions: const <SourceVersion>[],
       ),
@@ -32,7 +32,7 @@ void main() {
 
   test('adds high-risk safety review for context-heavy questions', () async {
     final AiAssistantRepository repository = AiAssistantRepository(
-      retriever: _FakeRetriever(
+      sourcePort: _FakeRetriever(
         sources: const <RetrievedPassage>[
           RetrievedPassage(
             sourceKind: RetrievedPassageSourceKind.quran,
@@ -76,7 +76,7 @@ void main() {
     );
 
     final AiAssistantRepository repository = AiAssistantRepository(
-      retriever: _FakeRetriever(
+      sourcePort: _FakeRetriever(
         sources: const <RetrievedPassage>[source],
         sourceVersions: const <SourceVersion>[
           SourceVersion(
@@ -109,7 +109,7 @@ void main() {
   });
 }
 
-class _FakeRetriever implements IslamicSourceRetriever {
+class _FakeRetriever implements AssistantSourcePort {
   _FakeRetriever({
     required this.sources,
     required this.sourceVersions,
@@ -123,7 +123,7 @@ class _FakeRetriever implements IslamicSourceRetriever {
 
   @override
   Future<List<SourceVersion>> getSourceVersions({
-    required AssistantMode mode,
+    required AssistantCorpus corpus,
     required String preferredLanguageCode,
   }) async {
     return sourceVersions;
@@ -131,7 +131,7 @@ class _FakeRetriever implements IslamicSourceRetriever {
 
   @override
   Future<List<RetrievedPassage>> retrieve({
-    required AssistantMode mode,
+    required AssistantCorpus corpus,
     required String query,
     required String preferredLanguageCode,
   }) async {

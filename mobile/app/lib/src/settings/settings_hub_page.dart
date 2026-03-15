@@ -62,9 +62,9 @@ class SettingsHubScreen extends StatelessWidget {
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.verified_outlined,
-                title: 'Sources & Versions',
+                title: 'Sources & Licenses',
                 subtitle:
-                    'Review installed packs, Quran/hadith source metadata, attributions, and last sync state.',
+                    'Review installed packs, Quran/hadith source metadata, attributions, license terms, and last sync state.',
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(

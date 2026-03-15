@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Ummah App Canonical Pack Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_id",
+    "module_id",
+    "title",
+    "summary",
+    "version",
+    "locales",
+    "size_bytes",
+    "sha256",
+    "content_type",
+    "delivery_type",
+    "install_steps",
+    "compatibility",
+    "sources"
+  ],
+  "properties": {
+    "pack_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_:-]+$"
+    },
+    "module_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:[-+][0-9A-Za-z.-]+)?$"
+    },
+    "locales": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 2
+      }
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": ["text", "sqlite", "json", "archive", "audioIndex"]
+    },
+    "delivery_type": {
+      "type": "string",
+      "enum": ["bundled", "remoteOptional"]
+    },
+    "install_steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "compatibility": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifact_path": {
+      "type": "string"
+    },
+    "remote_object_key": {
+      "type": "string"
+    },
+    "required_entitlement_key": {
+      "type": "string"
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "url",
+          "version",
+          "license_summary",
+          "attribution_required",
+          "no_modify_required",
+          "verbatim_only"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https://"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "license_summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "attribution_required": {
+            "type": "boolean"
+          },
+          "no_modify_required": {
+            "type": "boolean"
+          },
+          "verbatim_only": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

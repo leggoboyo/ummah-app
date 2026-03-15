@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 
 import 'assistant_safety_review.dart';
-import 'retrieved_passage.dart';
 
 class AssistantResponse {
   const AssistantResponse({

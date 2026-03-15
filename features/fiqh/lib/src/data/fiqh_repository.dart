@@ -1,5 +1,4 @@
 import 'package:core/core.dart';
-import 'package:prayer/prayer.dart';
 
 import '../domain/fiqh_checklist_item.dart';
 import '../domain/fiqh_knowledge_pack.dart';

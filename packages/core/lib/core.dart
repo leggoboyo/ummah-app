@@ -1,6 +1,13 @@
 export 'src/logging/app_logger.dart';
+export 'src/models/app_module.dart';
+export 'src/models/assistant_source_port.dart';
 export 'src/models/content_pack.dart';
+export 'src/models/content_pack_ids.dart';
 export 'src/models/coordinates.dart';
+export 'src/models/default_module_registry.dart';
 export 'src/models/entitlement.dart';
+export 'src/models/fiqh_profile.dart';
+export 'src/models/pack_catalog.dart';
+export 'src/models/retrieved_passage.dart';
 export 'src/models/source_version.dart';
 export 'src/settings/storage_ports.dart';

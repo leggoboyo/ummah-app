@@ -15,10 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -31,6 +37,27 @@ jobs:
 
       - name: Enforce formatting
         run: dart format --set-exit-if-changed .
+
+      - name: Enforce feature boundaries
+        run: python3 scripts/check_feature_boundaries.py
+
+      - name: Block tracked secret-like files
+        run: python3 scripts/check_tracked_secret_files.py
+
+      - name: Validate canonical pack manifests
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 scripts/validate_packs.py \
+              --check-version-bumps \
+              --base-ref "origin/${{ github.base_ref }}"
+          else
+            python3 scripts/validate_packs.py
+          fi
+
+      - name: Regenerate source docs and catalog
+        run: |
+          python3 scripts/generate_sources_site.py
+          git diff --exit-code -- docs/sources mobile/app/assets/generated/source_catalog.json
 
       - name: Install Worker dependencies
         working-directory: services/content-pack-worker

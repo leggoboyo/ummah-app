@@ -2,26 +2,8 @@ import 'package:core/core.dart';
 import 'package:hadith/hadith.dart';
 import 'package:quran/quran.dart';
 
-import '../domain/assistant_mode.dart';
-import '../domain/retrieved_passage.dart';
-
-abstract interface class IslamicSourceRetriever {
-  Future<List<RetrievedPassage>> retrieve({
-    required AssistantMode mode,
-    required String query,
-    required String preferredLanguageCode,
-  });
-
-  Future<List<SourceVersion>> getSourceVersions({
-    required AssistantMode mode,
-    required String preferredLanguageCode,
-  });
-
-  Future<void> dispose();
-}
-
-class LocalIslamicSourceRetriever implements IslamicSourceRetriever {
-  LocalIslamicSourceRetriever({
+class LocalAssistantSourcePort implements AssistantSourcePort {
+  LocalAssistantSourcePort({
     QuranRepository? quranRepository,
     HadithRepository? hadithRepository,
   })  : _quranRepository = quranRepository ?? QuranRepository(),
@@ -31,35 +13,35 @@ class LocalIslamicSourceRetriever implements IslamicSourceRetriever {
   final HadithRepository _hadithRepository;
 
   @override
-  Future<List<RetrievedPassage>> retrieve({
-    required AssistantMode mode,
-    required String query,
+  Future<List<SourceVersion>> getSourceVersions({
+    required AssistantCorpus corpus,
     required String preferredLanguageCode,
   }) {
-    switch (mode) {
-      case AssistantMode.quran:
-        return _retrieveQuran(
-          query: query,
-          preferredLanguageCode: preferredLanguageCode,
-        );
-      case AssistantMode.hadith:
-        return _retrieveHadith(
-          query: query,
-          preferredLanguageCode: preferredLanguageCode,
-        );
+    switch (corpus) {
+      case AssistantCorpus.quran:
+        return _quranRepository.getSourceVersions();
+      case AssistantCorpus.hadith:
+        return _hadithRepository.getSourceVersions();
     }
   }
 
   @override
-  Future<List<SourceVersion>> getSourceVersions({
-    required AssistantMode mode,
+  Future<List<RetrievedPassage>> retrieve({
+    required AssistantCorpus corpus,
+    required String query,
     required String preferredLanguageCode,
   }) {
-    switch (mode) {
-      case AssistantMode.quran:
-        return _quranRepository.getSourceVersions();
-      case AssistantMode.hadith:
-        return _hadithRepository.getSourceVersions();
+    switch (corpus) {
+      case AssistantCorpus.quran:
+        return _retrieveQuran(
+          query: query,
+          preferredLanguageCode: preferredLanguageCode,
+        );
+      case AssistantCorpus.hadith:
+        return _retrieveHadith(
+          query: query,
+          preferredLanguageCode: preferredLanguageCode,
+        );
     }
   }
 

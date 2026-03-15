@@ -3,12 +3,17 @@ import 'package:core/core.dart';
 import 'package:flutter/foundation.dart';
 
 import '../bootstrap/flutter_secure_value_store.dart';
+import 'local_assistant_source_port.dart';
 
 class AiAssistantController extends ChangeNotifier {
   AiAssistantController({
     AiAssistantRepository? repository,
     SecureValueStore? secureValueStore,
-  })  : _repository = repository ?? AiAssistantRepository(),
+    AssistantSourcePort? sourcePort,
+  })  : _repository = repository ??
+            AiAssistantRepository(
+              sourcePort: sourcePort ?? LocalAssistantSourcePort(),
+            ),
         _secureValueStore = secureValueStore ?? FlutterSecureValueStore();
 
   static const String _apiKeyStorageKey = 'openai_api_key_v1';

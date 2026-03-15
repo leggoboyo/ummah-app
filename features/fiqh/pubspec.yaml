@@ -11,8 +11,6 @@ dependencies:
     sdk: flutter
   core:
     path: ../../packages/core
-  prayer:
-    path: ../../features/prayer
 
 dev_dependencies:
   flutter_test:

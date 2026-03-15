@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:prayer/prayer.dart';
 
 class AppStrings {
@@ -232,9 +233,9 @@ class AppStrings {
         ur: 'جب آپ آف لائن ترجمہ شدہ آیات چاہتے ہوں تو QuranEnc کا ترجمہ منتخب کریں۔',
       );
   String get sourcesVersionsTitle => _pick(
-        en: 'Sources & versions',
-        ar: 'المصادر والإصدارات',
-        ur: 'ذرائع اور ورژنز',
+        en: 'Sources & licenses',
+        ar: 'المصادر والتراخيص',
+        ur: 'ذرائع اور لائسنس',
       );
   String get attentionNeededTitle => _pick(
         en: 'Attention needed',
@@ -257,9 +258,9 @@ class AppStrings {
         ur: 'کسی وسیع عربی جڑ، انگریزی لفظ، یا ترجمہ ڈاؤن لوڈ کرنے کے بعد تلاش آزمائیں۔',
       );
   String get sourcesVersionsHelp => _pick(
-        en: 'Bundled Arabic stays verbatim from Tanzil. Downloaded translations stay verbatim from QuranEnc and are version-tagged locally.',
-        ar: 'يبقى النص العربي المرفق مطابقاً لنص Tanzil. وتبقى الترجمات المنزلة مطابقة لنص QuranEnc مع حفظ الإصدار محلياً.',
-        ur: 'شامل شدہ عربی متن Tanzil سے لفظ بہ لفظ رکھا جاتا ہے۔ ڈاؤن لوڈ شدہ ترجمے QuranEnc سے بغیر تبدیلی کے محفوظ کیے جاتے ہیں اور ان کا ورژن بھی ساتھ رکھا جاتا ہے۔',
+        en: 'Bundled Arabic stays verbatim from Tanzil. Downloaded translations stay verbatim from QuranEnc, remain version-tagged locally, and follow the provider license terms shown in the source directory.',
+        ar: 'يبقى النص العربي المرفق مطابقاً لنص Tanzil. وتبقى الترجمات المنزلة مطابقة لنص QuranEnc مع حفظ الإصدار محلياً واتباع شروط الترخيص الظاهرة في دليل المصادر.',
+        ur: 'شامل شدہ عربی متن Tanzil سے لفظ بہ لفظ رکھا جاتا ہے۔ ڈاؤن لوڈ شدہ ترجمے QuranEnc سے بغیر تبدیلی کے محفوظ کیے جاتے ہیں، ان کا ورژن بھی ساتھ رکھا جاتا ہے، اور وہ سورس ڈائریکٹری میں دکھائی گئی لائسنس شرائط کی پابندی کرتے ہیں۔',
       );
   String get noTranslationVersionsLabel => _pick(
         en: 'No translation versions have been cached yet.',

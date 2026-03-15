@@ -35,6 +35,7 @@ class AppController extends ChangeNotifier {
     AppLocationResolver? locationResolver,
     AppNotificationSyncService? notificationSyncService,
     AppSupportReportBuilder? supportReportBuilder,
+    AppModuleRegistry? moduleRegistry,
   })  : _profileStore = profileStore ?? SharedPreferencesAppProfileStore(),
         _environment = environment ?? AppEnvironment.fromCompileTime(),
         _identityStore = identityStore ?? SecureAppIdentityStore(),
@@ -55,6 +56,7 @@ class AppController extends ChangeNotifier {
         _qiblaCalculator = qiblaCalculator ?? const QiblaCalculator(),
         _supportReportBuilder =
             supportReportBuilder ?? const AppSupportReportBuilder(),
+        _moduleRegistry = moduleRegistry ?? buildDefaultAppModuleRegistry(),
         _subscriptionRepository = subscriptionRepository ??
             SubscriptionRepository(
               provider: _buildSubscriptionProvider(
@@ -74,6 +76,7 @@ class AppController extends ChangeNotifier {
   final PrayerTimeCalculator _prayerTimeCalculator;
   final QiblaCalculator _qiblaCalculator;
   final AppSupportReportBuilder _supportReportBuilder;
+  final AppModuleRegistry _moduleRegistry;
   final SubscriptionRepository _subscriptionRepository;
 
   AppProfile _profile = AppProfile.defaults();
@@ -101,6 +104,8 @@ class AppController extends ChangeNotifier {
 
   Set<AppEntitlement> get entitlements =>
       Set<AppEntitlement>.unmodifiable(_entitlements);
+
+  AppModuleRegistry get moduleRegistry => _moduleRegistry;
 
   bool get onboardingComplete => _profile.onboardingComplete;
 

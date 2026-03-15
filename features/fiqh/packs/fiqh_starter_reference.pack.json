@@ -1,0 +1,33 @@
+{
+  "pack_id": "fiqh_pack:starter_reference",
+  "module_id": "basics_learning",
+  "title": "Fiqh Starter Reference Pack",
+  "summary": "Bundled reference pack with cited starter guidance and explicit non-fatwa posture.",
+  "version": "1.0.0",
+  "locales": ["en"],
+  "size_bytes": 13278,
+  "sha256": "8e1c490b8c9a692457ffbda37e9013cd14e35a61c6e6134191d71d11614f1441",
+  "content_type": "json",
+  "delivery_type": "bundled",
+  "install_steps": [
+    "load bundled fiqh knowledge JSON into the local repository",
+    "render source references without claiming fatwa authority"
+  ],
+  "compatibility": [
+    "offline",
+    "starter_reference",
+    "non_fatwa"
+  ],
+  "artifact_path": "features/fiqh/assets/fiqh_knowledge_v1.json",
+  "sources": [
+    {
+      "name": "Ummah App curated starter pack",
+      "url": "https://github.com/leggoboyo/ummah-app",
+      "version": "2026.03-starter",
+      "license_summary": "Original app-authored explanatory text with cited Quran and hadith references.",
+      "attribution_required": true,
+      "no_modify_required": false,
+      "verbatim_only": false
+    }
+  ]
+}

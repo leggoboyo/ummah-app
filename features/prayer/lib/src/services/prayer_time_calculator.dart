@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:core/core.dart';
 
-import '../domain/fiqh_profile.dart';
 import '../domain/high_latitude_rule.dart';
 import '../domain/prayer_calculation_method.dart';
 import '../domain/prayer_day.dart';

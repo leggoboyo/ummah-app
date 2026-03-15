@@ -13,6 +13,18 @@ workflow-lint:
 		exit 1; \
 	fi
 
+feature-boundary-check:
+	python3 scripts/check_feature_boundaries.py
+
+secret-file-check:
+	python3 scripts/check_tracked_secret_files.py
+
+validate-packs:
+	python3 scripts/validate_packs.py
+
+generate-sources:
+	python3 scripts/generate_sources_site.py
+
 format-check:
 	dart format --set-exit-if-changed .
 
@@ -34,7 +46,9 @@ worker-deploy:
 cost-report:
 	python3 scripts/estimate_cloudflare_costs.py
 
-quality: bootstrap format-check analyze test worker-test
+quality: bootstrap format-check pack-platform-check analyze test worker-test
+
+pack-platform-check: feature-boundary-check secret-file-check validate-packs generate-sources
 
 size-report:
 	./scripts/report_build_sizes.sh

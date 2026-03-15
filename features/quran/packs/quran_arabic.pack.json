@@ -1,0 +1,33 @@
+{
+  "pack_id": "quran_arabic",
+  "module_id": "quran_reader",
+  "title": "Quran Arabic Text",
+  "summary": "Bundled Tanzil Uthmani Arabic text for offline Quran reading from first launch.",
+  "version": "1.1.0",
+  "locales": ["ar"],
+  "size_bytes": 1396087,
+  "sha256": "6933e133dd56db778c801bf738848454e43648105a151e8d84d86a7cae39ec5f",
+  "content_type": "text",
+  "delivery_type": "bundled",
+  "install_steps": [
+    "seed bundled corpus into the local Quran database on first launch",
+    "preserve canonical Arabic text verbatim when displayed"
+  ],
+  "compatibility": [
+    "offline",
+    "base_reader",
+    "canonical_text"
+  ],
+  "artifact_path": "features/quran/assets/quran_uthmani_v1.1.txt",
+  "sources": [
+    {
+      "name": "Tanzil Project",
+      "url": "https://tanzil.net/download/",
+      "version": "1.1",
+      "license_summary": "Verbatim Quran text redistribution with attribution and link-back for updates.",
+      "attribution_required": true,
+      "no_modify_required": true,
+      "verbatim_only": true
+    }
+  ]
+}

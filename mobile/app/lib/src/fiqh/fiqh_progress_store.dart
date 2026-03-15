@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:prayer/prayer.dart';
+import 'package:core/core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract interface class FiqhChecklistProgressStore {

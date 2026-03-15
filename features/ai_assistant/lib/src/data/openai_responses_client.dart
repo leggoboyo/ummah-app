@@ -1,9 +1,9 @@
 import 'dart:convert';
 
+import 'package:core/core.dart';
 import 'package:http/http.dart' as http;
 
 import '../domain/assistant_mode.dart';
-import '../domain/retrieved_passage.dart';
 
 class OpenAiResponsesClient {
   OpenAiResponsesClient({

@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 import 'package:fiqh/fiqh.dart';
 import 'package:flutter/foundation.dart';
-import 'package:prayer/prayer.dart';
 
 import 'fiqh_progress_store.dart';
 

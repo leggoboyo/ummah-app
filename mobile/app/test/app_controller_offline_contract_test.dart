@@ -9,7 +9,6 @@ import 'package:ummah_mobile_app/src/bootstrap/app_profile.dart';
 import 'package:ummah_mobile_app/src/bootstrap/app_profile_store.dart';
 import 'package:ummah_mobile_app/src/bootstrap/device_location_service.dart';
 import 'package:ummah_mobile_app/src/bootstrap/local_notifications_service.dart';
-import 'package:ummah_mobile_app/src/content_packs/content_pack_registry.dart';
 
 void main() {
   test('free core boot stays local and does not initialize billing on startup',

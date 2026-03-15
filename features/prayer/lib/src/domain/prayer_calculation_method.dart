@@ -1,4 +1,5 @@
-import 'fiqh_profile.dart';
+import 'package:core/core.dart';
+
 import 'high_latitude_rule.dart';
 
 enum PrayerCalculationMethod {

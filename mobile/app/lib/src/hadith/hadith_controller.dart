@@ -2,8 +2,6 @@ import 'package:core/core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hadith/hadith.dart';
 
-import '../content_packs/content_pack_registry.dart';
-
 class HadithController extends ChangeNotifier {
   HadithController({
     HadithRepository? repository,

@@ -1,4 +1,3 @@
-export 'src/domain/fiqh_profile.dart';
 export 'src/domain/high_latitude_rule.dart';
 export 'src/domain/notification_health.dart';
 export 'src/domain/prayer_calculation_method.dart';

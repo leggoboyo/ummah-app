@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:quran/quran.dart';
 
 import '../bootstrap/app_profile.dart';
-import '../content_packs/content_pack_registry.dart';
 
 class QuranController extends ChangeNotifier {
   QuranController({

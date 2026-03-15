@@ -3,21 +3,19 @@ import 'package:core/core.dart';
 import '../domain/assistant_mode.dart';
 import '../domain/assistant_response.dart';
 import '../domain/assistant_safety_review.dart';
-import '../domain/retrieved_passage.dart';
-import 'islamic_source_retriever.dart';
 import 'openai_responses_client.dart';
 
 class AiAssistantRepository {
   AiAssistantRepository({
-    IslamicSourceRetriever? retriever,
+    AssistantSourcePort? sourcePort,
     OpenAiResponsesClient? client,
-  })  : _retriever = retriever ?? LocalIslamicSourceRetriever(),
+  })  : _sourcePort = sourcePort,
         _client = client ?? OpenAiResponsesClient();
 
   static const String insufficientEvidenceMessage =
       'I don\'t know from the current sources.';
 
-  final IslamicSourceRetriever _retriever;
+  final AssistantSourcePort? _sourcePort;
   final OpenAiResponsesClient _client;
 
   Future<AssistantResponse> askQuestion({
@@ -28,14 +26,18 @@ class AiAssistantRepository {
   }) async {
     final AssistantSafetyReview safetyReview =
         AssistantSafetyReview.review(question);
-    final List<RetrievedPassage> sources = await _retriever.retrieve(
-      mode: mode,
+    final AssistantSourcePort sourcePort = _sourcePort ??
+        (throw StateError(
+          'AI assistant source retrieval is not configured in this build.',
+        ));
+    final List<RetrievedPassage> sources = await sourcePort.retrieve(
+      corpus: _corpusFor(mode),
       query: question,
       preferredLanguageCode: preferredLanguageCode,
     );
     final List<SourceVersion> sourceVersions =
-        await _retriever.getSourceVersions(
-      mode: mode,
+        await sourcePort.getSourceVersions(
+      corpus: _corpusFor(mode),
       preferredLanguageCode: preferredLanguageCode,
     );
 
@@ -87,8 +89,17 @@ class AiAssistantRepository {
   }
 
   Future<void> dispose() async {
-    await _retriever.dispose();
+    await _sourcePort?.dispose();
     _client.dispose();
+  }
+
+  AssistantCorpus _corpusFor(AssistantMode mode) {
+    switch (mode) {
+      case AssistantMode.quran:
+        return AssistantCorpus.quran;
+      case AssistantMode.hadith:
+        return AssistantCorpus.hadith;
+    }
   }
 
   _ParsedAssistantSections _parseSections(String raw) {

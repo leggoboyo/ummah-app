@@ -4,6 +4,18 @@ Date: 2026-03-15
 
 Use these prompts in Atlas agentic mode. Each prompt is narrow, evidence-returning, and should stop only for required login, 2FA, or unavoidable approval.
 
+## Current verification snapshot
+
+These checks were already completed successfully on 2026-03-15:
+
+- Cloudflare Worker, R2, KV, and both required secrets were verified
+- RevenueCat server-side secret path was created and verified
+- Google Play internal testing was verified on `0.4.1 (7)`
+- GitHub repo visibility, branch protection, required checks, and Pages were verified
+
+Use the prompts below as rerun checklists when dashboard state changes or before a
+future launch milestone.
+
 ## 1. Cloudflare readiness check
 
 ```text

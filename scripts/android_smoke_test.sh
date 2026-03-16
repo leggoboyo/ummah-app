@@ -55,6 +55,9 @@ echo "Disabling Wi-Fi and mobile data..."
 adb_cmd shell svc wifi disable || true
 adb_cmd shell svc data disable || true
 
+echo "Clearing shell-command noise before app launch..."
+adb_cmd logcat -c || true
+
 echo "Launching app..."
 adb_cmd shell am start -n "$MAIN_ACTIVITY" >/dev/null
 sleep 6

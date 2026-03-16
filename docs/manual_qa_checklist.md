@@ -70,3 +70,19 @@
 - Confirm app behavior on a slower or older test phone remains responsive.
 - Confirm the lean performance mode can be forced from Settings and the UI remains usable.
 - Confirm the non-production banner appears only in dev and staging builds.
+
+## Physical Lower-End Android Signoff
+
+Record this before calling the Android broader beta ready:
+
+- device model, Android version, locale, and tester name
+- whether lean mode was active by default
+- whether testing included airplane mode and manual location
+
+Required signoff checks:
+
+- Confirm older-phone responsiveness remains acceptable on the prayer dashboard, Quran, and Hadith Finder.
+- Confirm onboarding, prayer times, qibla, and Quran Arabic still work in airplane mode.
+- Confirm exact and inexact alarm behavior is understandable and non-breaking on the device being tested.
+- Confirm Hadith source labels are human-readable and verification links open correctly.
+- Confirm no fresh blocker appears that would require updating `docs/launch_blockers.md`.

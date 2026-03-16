@@ -13,103 +13,91 @@ This audit covers:
 - release, distribution, and CI coverage
 - public-trust and licensing-facing repo surfaces
 
-This is a findings-first audit. If a claim could not be proven from code, tests, local builds, or a manual console check, it is treated as unproven.
+This is a findings-first audit. If a claim could not be proven from code, tests,
+local builds, or manual console verification, it is treated as unproven.
 
 ## Verification performed
 
-Commands run during the audit and remediation wave:
+Commands run on merged `main` during the post-public refresh:
 
 - `dart run melos exec -c 1 -- flutter analyze`
 - `dart run melos exec -c 1 --dir-exists=test -- flutter test`
 - `cd services/content-pack-worker && node --test`
 - `make secret-scan`
-- `flutter build apk --debug --dart-define-from-file=env/dev.json`
-- `flutter build apk --release --dart-define-from-file=env/prod.json`
 - `flutter build apk --release --split-per-abi --dart-define-from-file=env/prod.json`
 - `flutter build appbundle --release --dart-define-from-file=env/prod.json`
 - `./scripts/report_build_sizes.sh`
 - `flutter build ipa --no-codesign --dart-define-from-file=env/prod.json`
-- local trust-site preview via `curl http://127.0.0.1:4173`
+- `ADB_SERIAL=emulator-5554 APK_PATH=... ./scripts/android_smoke_test.sh`
+- `ADB_SERIAL=emulator-5556 APK_PATH=... ./scripts/android_smoke_test.sh`
+- `curl -I https://leggoboyo.github.io/ummah-app/`
+
+Manual console verification already completed for:
+
+- Cloudflare Worker, R2, KV, and secrets
+- RevenueCat server-side secret-key path
+- Google Play internal testing truth
+- GitHub public-repo state, required checks, branch protection, and Pages
 
 ## Findings
 
-### High
-
-#### 1. Manual dashboard truth still remains the main launch-risk gap
-
-The repo now proves much more than it did before this remediation wave, but public launch confidence still depends on systems outside the repository:
-
-- Cloudflare Worker bindings and secrets
-- Google Play internal-track artifact truth and Data Safety posture
-- GitHub Pages / branch-protection / required-check truth
-- RevenueCat product and entitlement truth if paid-pack activation is expected soon
-
-Impact:
-
-- the code can now credibly support public claims
-- the remaining risk is operational drift between code assumptions and live dashboards
-
-Call:
-
-- not a repo-code failure
-- still a real launch blocker until the Atlas checks in `docs/atlas_readiness_checks.md` are run
-
 ### Medium
 
-#### 2. Older-phone readiness is materially stronger, but still under-proven without a physical device
+#### 1. One physical lower-end Android pass is still required before broader Android beta claims
 
-The repo now has:
+What is already true:
 
-- Android 7+ / API 24 build support
-- `armeabi-v7a` and `arm64-v8a` split APK reporting
-- lean UI mode for lower-end devices
-- lazy billing bootstrap
-- lazy Quran initialization
-- reduced timer-driven whole-shell rebuild pressure
+- API 24 / Android 7+ remains the Android floor
+- lean mode exists for older/lower-memory Android devices
+- `armeabi-v7a` and `arm64-v8a` split APKs are built and tracked
+- offline smoke now passes on both the modern emulator and the API 24 emulator
 
-Impact:
+What is still missing:
 
-- the engineering posture is much stronger for lower-end Android devices
-- the remaining uncertainty is real-device behavior: compass, alarms, and responsiveness on genuine low-end hardware
+- one real physical lower-end Android device signoff covering responsiveness,
+  alarm behavior, airplane-mode flows, and Hadith source-link quality
 
 Call:
 
-- safe for continued emulator-based Android internal testing
-- not yet fully proven for strong “works seamlessly on older phones” public claims
+- Android internal testing is healthy
+- Android broader beta should wait for one physical low-end signoff
 
-#### 3. iOS is structurally healthier, but still needs human distribution truth
+#### 2. iOS is code-healthy but still not ready for public-beta claims
 
-The iOS repo-side blockers were resolved:
+What is already true:
 
-- placeholder icon and launch assets were replaced
-- always-and-when-in-use location scope was removed
-- no-codesign archive builds successfully
+- `flutter build ipa --no-codesign` passes
+- placeholder icon and launch-image warnings were resolved
+- the broader iOS location permission string was removed
 
-Impact:
+What is still missing:
 
-- the codebase is no longer blocked by the earlier iOS asset/privacy issues
-- real distribution still depends on signing, screenshots, listing assets, and store-console truth
+- signing and App Store Connect / TestFlight truth
+- final distribution assets and listing surfaces
 
 Call:
 
-- repo-side iOS blocker resolved
-- human publishing truth still required before launch-facing claims
+- iOS is no longer blocked by repo-side launch hygiene
+- iOS should remain a secondary track until human distribution work is done
 
 ### Low
 
-#### 4. Android smoke tooling is ready, but `adb` was not discoverable in the current shell environment
+#### 3. RevenueCat remains Android-first in practice
 
-The repo now contains a reusable smoke script in `scripts/android_smoke_test.sh` and a low-end emulator helper in `scripts/create_low_end_android_avd.sh`. In this shell session, `adb` could not be located under the expected SDK paths, so the script could not be rerun from the terminal even though emulator-driven validation had already been performed earlier in the project.
+What is already true:
 
-Impact:
+- the server-side RevenueCat key path exists
+- Cloudflare now holds `REVENUECAT_API_KEY`
+- Android entitlements and offerings are configured
 
-- this is an environment/tooling visibility issue, not a product-code flaw
-- the runbook is still useful, but the local machine should expose Android platform-tools consistently
+What is still incomplete:
+
+- RevenueCat iOS app configuration is not present yet
 
 Call:
 
-- low-severity local tooling issue
-- does not block code readiness, but should be cleaned up for repeatable founder QA
+- not a blocker for Android broader beta
+- avoid implying the iOS paid-module path is already fully live
 
 ## Positive controls
 
@@ -118,80 +106,91 @@ The strongest current controls are:
 - full workspace analysis passes
 - full workspace tests pass
 - Worker tests pass
-- Android debug, release, split APK, and AAB builds all pass locally
-- iOS no-codesign archive builds successfully after the asset refresh
-- the Android app still supports API 24 and split APK coverage for older phones
-- free-core bootstrap now keeps RevenueCat off the launch path
-- the app user identifier now migrates into secure storage
+- Android release, split APK, and AAB builds all pass locally
+- iOS no-codesign archive builds successfully
+- Android smoke passes on both a modern emulator and an API 24 emulator
+- free-core bootstrap keeps billing off the launch path
+- the app user identifier migrates into secure storage
 - BYOK secrets remain in secure storage
-- the privacy screen now accurately describes optional billing/network behavior
-- source verification URLs are tappable in the app where URLs exist
-- a tracked GitHub Pages trust site now exists in `website/`
-- repo hygiene workflows now cover workflow linting and secret scanning
+- source verification links are tappable in the app where URLs exist
+- the repo is public and `main` is protected by required checks and approvals
+- the GitHub Pages trust site is live
+- Cloudflare Worker bindings/secrets were manually verified
+- RevenueCat server-side secret path was manually verified
+- Google Play internal testing was manually verified
 
 ## Repo health scorecard
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Build reproducibility | Green | Android debug/release/split APK/AAB and iOS no-codesign archive all build locally. |
-| Test reliability | Green | `flutter analyze`, `flutter test`, and Worker tests passed. |
-| CI confidence | Green/Yellow | Core CI is now stronger with workflow linting, secret scanning, and broader Android artifact tracking; live GitHub required-check truth is still external. |
-| Release artifact readiness | Yellow | Android is repo-verified and test-ready; iOS repo blockers are fixed, but store/signing truth is still human-gated. |
-| Documentation freshness | Green/Yellow | Core docs are now much closer to repo truth; final public trust wording still depends on Atlas console verification. |
+| Build reproducibility | Green | Android release/split APK/AAB and iOS no-codesign archive all build locally. |
+| Test reliability | Green | `flutter analyze`, `flutter test`, Worker tests, and emulator smoke all passed. |
+| CI confidence | Green | Required checks are configured on `main` and the merged launch-readiness PR passed them. |
+| Release artifact readiness | Green/Yellow | Android is strong for broader beta after one physical-device pass; iOS is still human-gated. |
+| Documentation freshness | Green | Public docs and trust surfaces were refreshed after the repo went public and external checks completed. |
 
 ## Runtime reliability matrix
 
-| Surface | Current repo-backed status | Evidence basis | Remaining gap |
+| Surface | Current status | Evidence basis | Remaining gap |
 | --- | --- | --- | --- |
-| Free-core launch without billing init | Pass | `AppController` bootstrap refactor + tests | none repo-side |
-| Onboarding entry after fresh install | Pass | local validation + existing test coverage | full branch-by-branch device walkthrough still useful |
-| Quran Arabic offline | Pass | workspace tests + lazy-load cleanup | more manual device QA always useful |
-| Manual location and prayer setup | Pass | existing tests + privacy/runtime docs alignment | more real-device GPS choice QA useful |
-| Unsupported locale fallback to English | Pass | app locale normalization in `UmmahApp` | wider widget-level locale coverage still possible later |
-| EN/AR/UR runtime contract | Pass | app language layer + current supported locales | not every screen has dedicated RTL regression tests |
-| Lower-end Android posture | Partial pass | lean mode + split APKs + API 24 support | still needs one physical-device pass |
-| Hadith source labeling and verification | Pass | human-readable source cleanup + tappable links | source metadata quality still depends on upstream records in some cases |
+| Free-core launch without billing init | Pass | bootstrap refactor + tests | none repo-side |
+| Onboarding after fresh install | Pass | emulator smoke + test coverage | physical-device pass still valuable |
+| Quran Arabic offline | Pass | tests + smoke + lazy-load cleanup | more real-device QA always useful |
+| Manual location and prayer setup | Pass | tests + privacy/runtime alignment | physical-device GPS choice QA still useful |
+| Unsupported locale fallback to English | Pass | locale normalization in app shell | no current blocker |
+| EN/AR/UR runtime contract | Pass | supported locale contract + tests | more screen-specific RTL tests would be a future improvement |
+| Lower-end Android posture | Partial pass | lean mode + split APKs + API 24 smoke | one physical low-end phone still required |
+| Hadith source labeling and verification | Pass | source-label cleanup + tappable links | upstream metadata quality can still vary |
 
 ## Release and distribution posture
 
 Current local build truth:
 
 - Android minimum SDK remains API 24
-- the app still builds split APKs for `armeabi-v7a` and `arm64-v8a`
-- latest local AAB measured during this wave: about `51.07 MB`
-- latest local fat release APK measured during this wave: about `61.29 MB`
+- the app builds split APKs for `armeabi-v7a` and `arm64-v8a`
+- latest local AAB: about `51.07 MB`
+- latest local fat release APK: about `61.29 MB`
 - latest local `armeabi-v7a` split APK: about `20.63 MB`
 - latest local `arm64-v8a` split APK: about `22.82 MB`
 
+Current externally verified truth:
+
+- GitHub repository is public
+- GitHub Pages is live at `https://leggoboyo.github.io/ummah-app/`
+- `main` requires PRs, one approval, and passing checks
+- Google Play internal testing is active on `0.4.1 (7)`
+- Cloudflare Worker secrets and bindings are present
+- RevenueCat server-side secret path exists for Worker checks
+
 Surface-level release call:
 
-- Android internal testing: safe to continue
-- Android broader external beta: reasonable after manual dashboard truth checks and at least one physical-device pass
-- iOS beta / store readiness: repo-side blockers resolved, but final publishing remains human-gated
-- Free core privacy/offline claims: now materially stronger and code-backed
-- Remote Hadith starter-pack flow: safe to keep testing
-- Remote paid-pack flow: do not call fully live until Cloudflare and RevenueCat dashboard truth is confirmed
+- Android internal testing: healthy
+- Android broader external beta: reasonable after one physical low-end device pass
+- iOS beta / store readiness: repo-side blockers resolved, publishing still human-gated
+- free-core privacy/offline claims: strong and code-backed
+- optional-cloud claims: verified and ready for careful public wording
 
 ## Threat-summary appendix
 
-The most important realistic abuse/failure paths now are:
+The most important realistic abuse or failure paths now are:
 
-1. Dashboard drift between repo assumptions and live Cloudflare / Play / RevenueCat / GitHub state.
-2. Signed download URLs remain bearer-style tokens even with short-lived signing and `no-store`; leakage still matters until expiry.
-3. Starter-pack daily budgeting is best-effort under KV concurrency and should not be treated as strict abuse prevention.
-4. Lower-end Android regressions can still appear on real hardware even when emulator/API 24 coverage is clean.
+1. signed download URLs are still bearer-style tokens until expiry, even with short lifetimes and `no-store`
+2. starter-pack daily budgeting is best-effort under KV concurrency and should not be treated as strict abuse prevention
+3. a real low-end Android device could still expose responsiveness or alarm issues not seen on emulators
+4. iOS store/distribution misconfiguration could still contradict repo truth if handled carelessly later
 
 ## Overall call
 
-This repo is now in materially better shape than the earlier audit snapshot:
+This codebase is now in a materially stronger state than the earlier private-repo
+snapshot:
 
-- safe for continued Android internal testing
-- structurally stronger for privacy/offline claims
-- materially stronger for older-phone readiness
-- materially stronger for public trust and proof surfaces
+- the public proof story is real, not aspirational
+- CI and branch protection are active
+- the free-core launch posture is cleaner and more defensible
+- optional-cloud boundaries are visible and verified
 
-The remaining launch risk is now less about code quality and more about:
+The main remaining risk is not hidden repo drift. It is the final operational
+mile:
 
-- external dashboard truth
-- real-device validation
-- final publishing and store-surface alignment
+- one physical low-end Android pass
+- final iOS publishing/signing truth

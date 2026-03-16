@@ -1,0 +1,124 @@
+name: Bug report
+description: Report a reproducible bug in the app, trust site, or optional backend flow.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please do not use this form for security issues.
+        For vulnerabilities, follow the private reporting path in `SECURITY.md`.
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - Android app
+        - iOS app
+        - GitHub Pages trust site
+        - Cloudflare pack delivery
+        - Release / CI / docs
+    validations:
+      required: true
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App build or site version
+      description: Include app version, version code, commit, or site URL if known.
+      placeholder: "Example: 0.4.1 (7)"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device model
+      placeholder: "Example: Samsung Galaxy A12"
+    validations:
+      required: true
+
+  - type: input
+    id: os_version
+    attributes:
+      label: Android / iOS version
+      placeholder: "Example: Android 8.1"
+    validations:
+      required: true
+
+  - type: input
+    id: locale
+    attributes:
+      label: Device language / locale
+      placeholder: "Example: en-US, ar-SA, ur-PK"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: network_state
+    attributes:
+      label: Network state when the bug happened
+      options:
+        - Airplane mode / fully offline
+        - Wi-Fi only
+        - Mobile data only
+        - Mixed / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: low_end
+    attributes:
+      label: Did this happen on a lower-end or older device?
+      options:
+        - "Yes"
+        - "No"
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: manual_location
+    attributes:
+      label: Was manual location or manual coordinates involved?
+      options:
+        - "Yes"
+        - "No"
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Be specific enough that someone else can replay the issue.
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+        3. Switch to airplane mode ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, screenshots, or extra context
+      description: Paste only non-sensitive details. Redacted diagnostics are preferred.

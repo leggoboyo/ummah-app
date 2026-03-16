@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest a product improvement or workflow change.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      placeholder: Describe the user problem, not just the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      placeholder: Describe the feature or workflow change you want.
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints or tradeoffs
+      description: Mention privacy, offline behavior, licensing, low-end device performance, or cost constraints if they matter.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional. List any workaround or competing approach you already tried.

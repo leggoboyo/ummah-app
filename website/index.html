@@ -8,7 +8,7 @@
       name="description"
       content="Evidence-driven public overview of Ummah App: offline boundary, optional cloud boundary, source licensing, release posture, and repo-backed proof links."
     />
-    <link rel="stylesheet" href="./styles.css?v=1" />
+    <link rel="stylesheet" href="./styles.css?v=2" />
   </head>
   <body>
     <div class="site-shell">
@@ -43,13 +43,14 @@
       <main id="top">
         <section class="hero">
           <div class="hero-copy">
-            <p class="eyebrow">Evidence-driven product posture</p>
-            <h1>Built to keep the worship core local, the cloud optional, and the claims inspectable.</h1>
+            <p class="eyebrow">Verified public posture</p>
+            <h1>Public repo. Protected main. Offline-first worship core.</h1>
             <p class="hero-summary">
-              Ummah App is being built so prayer times, adhan reminders, qibla,
-              Hijri date, and Quran Arabic stay useful without an account, without
-              analytics by default, and without turning the app into a service-heavy
-              dependency.
+              Ummah App is public by design so the privacy, sourcing, and
+              optional-cloud claims can be inspected in code, docs, CI, and live
+              deployment posture. The product goal stays narrow: keep prayer
+              times, adhan reminders, qibla, Hijri date, and Quran Arabic useful
+              without an account and without analytics by default.
             </p>
 
             <div class="hero-actions">
@@ -66,41 +67,41 @@
 
             <dl class="hero-metrics">
               <div>
-                <dt>Free core</dt>
-                <dd>No app account required</dd>
+                <dt>Repository</dt>
+                <dd>Public on GitHub</dd>
               </div>
               <div>
-                <dt>Current build</dt>
-                <dd>No analytics SDK active</dd>
+                <dt>Main branch</dt>
+                <dd>PR + checks enforced</dd>
               </div>
               <div>
-                <dt>Offline boundary</dt>
+                <dt>Offline core</dt>
                 <dd>Prayer, qibla, Hijri, Quran Arabic</dd>
               </div>
               <div>
                 <dt>Optional cloud</dt>
-                <dd>Hadith packs, billing, scholar feed, BYOK AI</dd>
+                <dd>Worker + billing path verified</dd>
               </div>
             </dl>
           </div>
 
           <aside class="hero-panel">
-            <p class="panel-label">Executive summary</p>
-            <h2>Current public guarantees</h2>
+            <p class="panel-label">Current verified state</p>
+            <h2>What is already proven</h2>
             <ul class="audit-list">
-              <li>Android support floor is API 24 / Android 7+</li>
-              <li>Supported runtime UI languages are English, Arabic, and Urdu</li>
-              <li>Paid billing is lazy-loaded and kept off the free-core boot path</li>
-              <li>Sunni Hadith packs are optional and source-backed</li>
-              <li>Cloudflare infrastructure is intentionally limited to optional features</li>
+              <li>GitHub Pages is live and the repo is public</li>
+              <li><code>main</code> requires pull requests, approval, and passing checks</li>
+              <li>Cloudflare Worker, R2, KV, and both expected secrets are verified</li>
+              <li>Google Play internal testing is active on <code>0.4.1 (7)</code></li>
+              <li>RevenueCat server-side secret path exists for Worker checks</li>
             </ul>
 
             <div class="panel-block">
-              <p class="panel-block-label">Last local verification</p>
+              <p class="panel-block-label">Last verification pass</p>
               <p>March 15, 2026</p>
               <p class="panel-muted">
-                Workspace analysis, tests, Android builds, Worker tests, and
-                offline Android smoke were re-run from repo state.
+                Workspace analysis, tests, Android builds, Worker tests, GitHub
+                Pages, and Android smoke were re-run from merged main.
               </p>
             </div>
           </aside>
@@ -116,9 +117,9 @@
             <article class="card">
               <h3>Keep the essentials light</h3>
               <p>
-                The app is intentionally structured so the core worship utilities
-                do not depend on a live backend. The product goal is low monetary
-                cost, low performance cost, and low hidden behavior.
+                The app is structured so the core worship utilities do not depend
+                on a live backend. The product goal is low monetary cost, low
+                performance cost, and low hidden behavior.
               </p>
             </article>
             <article class="card">
@@ -194,7 +195,7 @@
             >
               <span class="proof-label">Audit</span>
               <strong>Readiness audit</strong>
-              <p>Findings-first report covering repo health, privacy, runtime reliability, and release risk.</p>
+              <p>Findings-first report covering repo health, runtime reliability, privacy posture, and release risk.</p>
             </a>
 
             <a
@@ -205,7 +206,7 @@
             >
               <span class="proof-label">Blockers</span>
               <strong>Launch blockers</strong>
-              <p>Only the issues serious enough to block broader testing or launch claims.</p>
+              <p>Only the issues serious enough to block broader beta claims or launch wording.</p>
             </a>
 
             <a
@@ -232,13 +233,13 @@
 
             <a
               class="proof-card"
-              href="https://github.com/leggoboyo/ummah-app/blob/main/docs/manual_qa_checklist.md"
+              href="https://github.com/leggoboyo/ummah-app/blob/main/docs/beta_launch_checklist.md"
               target="_blank"
               rel="noreferrer"
             >
-              <span class="proof-label">QA</span>
-              <strong>Manual QA checklist</strong>
-              <p>Regression checklist for onboarding, prayer, qibla, Quran, hadith, and support surfaces.</p>
+              <span class="proof-label">Beta</span>
+              <strong>Beta launch checklist</strong>
+              <p>Founder/operator checklist for Android-first broader beta and real-device signoff.</p>
             </a>
 
             <a
@@ -249,7 +250,7 @@
             >
               <span class="proof-label">Ops</span>
               <strong>Release readiness</strong>
-              <p>Current live-env truth, remaining human-gated work, and release posture by surface.</p>
+              <p>Current build truth, external verification status, and the remaining human-gated release work.</p>
             </a>
           </div>
         </section>
@@ -264,9 +265,9 @@
             <article class="card">
               <h3>Tanzil Quran text</h3>
               <p>
-                Bundled Quran Arabic is intended to stay verbatim. The project
-                treats Tanzil’s verbatim-only posture as a hard constraint for
-                canonical text display.
+                Bundled Quran Arabic stays verbatim. The project treats Tanzil's
+                verbatim-only posture as a hard constraint for canonical text
+                display.
               </p>
               <a href="https://tanzil.ir/docs/text_license" target="_blank" rel="noreferrer">License</a>
             </article>
@@ -274,8 +275,8 @@
             <article class="card">
               <h3>QuranEnc translations</h3>
               <p>
-                Translation content is shown with source/version metadata and is
-                meant to stay attributable rather than silently rewritten.
+                Translation content is shown with source and version metadata and
+                is not silently rewritten into uncited product copy.
               </p>
               <a href="https://quranenc.com/en/pdf" target="_blank" rel="noreferrer">Terms</a>
             </article>
@@ -303,8 +304,8 @@
               <h3>Flutter app shell</h3>
               <p>
                 The app shell lives in <code>mobile/app</code> and composes the
-                feature packages. The launch path is supposed to privilege the
-                free core and defer optional modules.
+                feature packages. The launch path privileges the free core and
+                defers optional modules.
               </p>
             </article>
             <article class="architecture-card">
@@ -322,7 +323,7 @@
               <p>
                 Remote hadith pack manifests, access grants, and downloads are
                 served from a Cloudflare Worker backed by KV and R2. That boundary
-                is meant to remain optional and explicitly documented.
+                has been verified and remains optional rather than mandatory.
               </p>
             </article>
           </div>
@@ -334,24 +335,33 @@
             <h2>Current build posture</h2>
           </div>
 
-          <div class="release-grid">
+          <div class="card-grid card-grid-3">
             <article class="card">
               <h3>Artifact sizes</h3>
               <ul class="compact-list">
-                <li>Release AAB: 51.48 MB</li>
-                <li>Fat release APK: 62.37 MB</li>
-                <li><code>armeabi-v7a</code> split APK: 21.02 MB</li>
-                <li><code>arm64-v8a</code> split APK: 23.14 MB</li>
+                <li>Release AAB: 51.07 MB</li>
+                <li>Fat release APK: 61.29 MB</li>
+                <li><code>armeabi-v7a</code> split APK: 20.63 MB</li>
+                <li><code>arm64-v8a</code> split APK: 22.82 MB</li>
               </ul>
             </article>
 
             <article class="card">
-              <h3>Shipping stance</h3>
+              <h3>Verified now</h3>
               <ul class="compact-list">
                 <li>Android target supports API 24+</li>
                 <li>EN / AR / UR are the supported runtime UI languages</li>
-                <li>iOS store-readiness still depends on final verification after asset/plist cleanup</li>
-                <li>Paid extra-language hadith packs still depend on Worker secret truth in Cloudflare</li>
+                <li>GitHub Pages is live and mainline checks are enforced</li>
+                <li>Play internal testing is active on <code>0.4.1 (7)</code></li>
+              </ul>
+            </article>
+
+            <article class="card">
+              <h3>Still being verified</h3>
+              <ul class="compact-list">
+                <li>One physical lower-end Android signoff is still required</li>
+                <li>iOS publishing and signing remain human-gated</li>
+                <li>RevenueCat iOS app setup is still pending</li>
               </ul>
             </article>
           </div>
@@ -362,12 +372,12 @@
         <p>Ummah App public trust surface</p>
         <div class="footer-links">
           <a href="https://github.com/leggoboyo/ummah-app" target="_blank" rel="noreferrer">Repository</a>
-          <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/developer_guide.md" target="_blank" rel="noreferrer">Developer guide</a>
-          <a href="https://github.com/leggoboyo/ummah-app/blob/main/docs/atlas_readiness_checks.md" target="_blank" rel="noreferrer">Atlas checks</a>
+          <a href="https://github.com/leggoboyo/ummah-app/blob/main/CONTRIBUTING.md" target="_blank" rel="noreferrer">Contributing</a>
+          <a href="https://github.com/leggoboyo/ummah-app/blob/main/SECURITY.md" target="_blank" rel="noreferrer">Security policy</a>
         </div>
       </footer>
     </div>
 
-    <script src="./app.js?v=1"></script>
+    <script src="./app.js?v=2"></script>
   </body>
 </html>

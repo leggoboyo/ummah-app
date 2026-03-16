@@ -2,123 +2,123 @@
 
 Date: 2026-03-15
 
-This document tracks the difference between what an external reviewer could verify from the repo today and what still depends on manual dashboard or real-device confirmation.
+This document tracks the difference between what an external reviewer can now
+verify from the public repo and live surfaces, and what still depends on manual
+signoff or later publishing work.
 
 ## Claims that are now strong and credible
 
-### Free-core launch posture
+### Public proof posture
 
-These claims are now backed by repo reality:
+These claims are now backed by visible evidence:
+
+- the repo is public
+- the trust site is live on GitHub Pages
+- `main` is protected with required checks and approvals
+- the trust site links back to repo docs rather than making floating claims
+
+Why these are credible:
+
+- the repository is publicly visible on GitHub
+- the site is live at `https://leggoboyo.github.io/ummah-app/`
+- GitHub branch protection and required checks were manually verified
+
+### Free-core launch and privacy posture
+
+These claims are now backed by code and verification:
 
 - the free-core launch path keeps billing lazy
 - prayer, qibla, Hijri, and Quran Arabic remain local-first surfaces
 - no analytics SDK is active in the current build
-- optional Cloudflare/RevenueCat infrastructure remains outside the free-core bootstrap path
+- optional Cloudflare and RevenueCat infrastructure remains outside the free-core
+  bootstrap path
 
-Why these are credible:
+### Optional-cloud boundary
 
-- `mobile/app/lib/src/bootstrap/app_controller.dart` now keeps billing off `initialize()`
-- secure app-user-ID creation happens only when optional billing/pack flows need it
-- workspace analysis and tests pass
-- Android and iOS builds complete locally
-- the privacy model and in-app privacy copy now match the code more closely
+These claims are now backed by external verification:
 
-### Public proof surface
-
-These claims are now backed by repo reality:
-
-- the repo contains a tracked static trust site in `website/`
-- the site is designed to link back to repo-backed docs rather than make free-floating claims
-- the app-side Sources & Versions screen now exposes tappable verification links where URLs exist
+- the live Cloudflare Worker exists at the expected URL
+- the Worker has the expected R2 and KV bindings
+- the Worker has both `DOWNLOAD_SIGNING_SECRET` and `REVENUECAT_API_KEY`
+- Google Play internal testing is active on `0.4.1 (7)`
+- the RevenueCat server-side secret path exists for paid pack checks
 
 ## Claims that still require careful wording
 
-### 1. “Launch-ready” across every public surface
+### 1. “Ready for broader Android beta right now”
 
 Why it still needs care:
 
-- the repo-side fixes are in place
-- final launch confidence still depends on Cloudflare, Google Play, GitHub Pages, and possibly RevenueCat dashboard truth
+- emulator and build proof are strong
+- one real lower-end Android device pass is still missing
 
-Correction:
+Better wording:
 
-- say the app is repo-verified and local-build-verified
-- do not say all live operational surfaces are confirmed until the Atlas checks return evidence
+- say Android broader beta is close and pending one physical low-end signoff
 
-### 2. “Seamless older-phone support internationally”
+### 2. “iOS public beta or store-ready”
 
 Why it still needs care:
 
-- the repo now has lean mode, split APK reporting, API 24 smoke tooling, and lazy startup improvements
-- that is strong engineering evidence, but not the same as real device validation across the lowest-end Android hardware
+- repo-side iOS blockers were resolved
+- distribution, signing, TestFlight/App Store Connect, and store surfaces are
+  still human-gated
 
-Correction:
+Better wording:
 
-- say the app is explicitly optimized for Android 7+ and lower-end devices
-- avoid claiming it is fully proven on real older hardware until a physical-device pass is done
+- say iOS build hygiene is improved, but publishing is still a separate final step
 
-## Claims that are now resolved
+### 3. “Paid optional modules are equally ready on Android and iOS”
 
-These previously overstated claims are no longer mismatched in repo code:
+Why it still needs care:
 
-- “no hidden backend dependency on app launch”
-- “location permission is only when needed” for iOS scope
-- “the repo has no public trust site”
+- Android-side Worker and RevenueCat server-secret path are verified
+- RevenueCat iOS app configuration is still absent
 
-## Claims that remain under-proven
+Better wording:
 
-### Dashboard and store-console state
+- say optional paid-path infrastructure is verified for the current Android-first
+  beta posture
 
-Current proof:
+## Claims intentionally kept out of public surfaces
 
-- repo env files, workflows, and docs describe the intended live posture
+These should remain non-public even though the repo is public:
 
-Gap:
+- the Google Play internal test invite link
+- private operational-only dashboard details that do not improve user trust
+- any secret values or account-only identifiers beyond what is necessary for proof
 
-- only the real consoles can prove secrets, bindings, tester access, Pages configuration, and Data Safety/store truth
+## Remaining public-proof gap
 
-### Full EN/AR/UR UX matrix
+The main remaining external gap is now narrow:
 
-Current proof:
+- one physical lower-end Android validation pass
+- final iOS publishing truth
 
-- runtime language contract is `en`, `ar`, and `ur`
-- unsupported locale fallback resolves to English
-- core code and tests back the language-selection contract
+That is a much smaller gap than the earlier pre-public state, where Cloudflare,
+RevenueCat, Play, GitHub Pages, and branch-protection truth were still pending.
 
-Gap:
+## Recommended public proof set
 
-- not every screen has dedicated RTL/LTR regression coverage yet
+The strongest current public proof bundle is:
 
-### Real-device lower-end Android behavior
-
-Current proof:
-
-- split APK coverage exists
-- API 24 emulator smoke tooling exists
-- build-size reporting now includes `armeabi-v7a` and `arm64-v8a`
-
-Gap:
-
-- still needs at least one real low-end Android validation pass
-
-## Public-facing proof artifacts recommended next
-
-The highest-value external proof set now is:
-
-1. publish the GitHub Pages trust site
-2. run the Atlas checks in `docs/atlas_readiness_checks.md`
-3. update trust-site / README wording from the returned console truth
-4. keep `docs/readiness_audit.md`, `docs/launch_blockers.md`, and `docs/release_readiness.md` as the internal proof spine
+1. the live GitHub repository
+2. the live trust site
+3. `docs/readiness_audit.md`
+4. `docs/launch_blockers.md`
+5. `docs/release_readiness.md`
+6. `docs/privacy_model.md`
+7. `docs/security_model.md`
 
 ## Current narrative call
 
 The project can now credibly present itself as:
 
-- a serious privacy-first, offline-first Islamic app with repo-backed proof surfaces
-- engineered to keep the free core local-first and optional cloud boundaries visible
-- ready for continued Android internal testing and broader trust-surface review
+- a public, inspectable privacy-first and offline-first Islamic app
+- engineered to keep the free core local-first and the cloud visibly optional
+- backed by live CI, protected mainline workflow, and a public trust site
 
 It should still avoid presenting itself as:
 
-- fully dashboard-verified across Cloudflare, Play Console, GitHub Pages, and RevenueCat before those checks are run
-- fully proven on real low-end Android hardware worldwide without a physical-device pass
+- fully proven on real low-end Android hardware before that final device pass
+- already distributed and store-ready on iOS

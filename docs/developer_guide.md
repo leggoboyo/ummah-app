@@ -9,8 +9,10 @@
 - `make worker-upload-packs` — upload generated Hadith pack objects and manifests to Cloudflare R2
 - `make worker-deploy` — deploy the Cloudflare Worker with Wrangler
 - `make cost-report` — print the current Cloudflare free-tier breakpoint estimate for remote Hadith packs
+- `make secret-scan` — fail if tracked secret-like files or high-confidence secret material appear in git
 - `make quality` — bootstrap, format check, analyze, tests, and Worker tests
 - `make size-report` — print current build artifact sizes if artifacts already exist
+- `make site-preview` — serve the public trust site locally on port `4173`
 
 ## Core principles when developing
 - do not introduce an account requirement for the free core
@@ -23,6 +25,8 @@
 - Android/iOS build validation is performed in GitHub Actions.
 - staging/prod runtime behavior comes from `mobile/app/env/*.json`.
 - `apiBaseUrl` must remain optional; an empty value must not break the free core.
+- RevenueCat and store billing must remain off the free-core startup path.
+- lower-end Android devices can fall back to lean UI mode automatically or by user override.
 
 ## Hadith remote pack workflow
 - generate pack artifacts from `features/hadith/tool`
@@ -32,8 +36,9 @@
   - `npx wrangler secret put DOWNLOAD_SIGNING_SECRET`
   - `npx wrangler secret put REVENUECAT_API_KEY`
 - deploy the Worker in `services/content-pack-worker` with `make worker-deploy`
-- configure `apiBaseUrl` only after the Worker URL is live
+- `apiBaseUrl` is already pointed at the live Worker URL in the current env files; keep it optional and verify dashboard truth before public claims
 - review `docs/cloudflare_cost_model.md` and `make cost-report` before raising daily starter-pack budgets
+- remember that starter-pack budget enforcement is a best-effort cost guardrail, not a strongly consistent abuse counter
 
 ## Support and diagnostics workflow
 - use the redacted support report first
@@ -43,3 +48,4 @@
 - rely on CI for format/analyze/test/build validation
 - use Dependabot for dependency review
 - review build-size reports before shipping heavier content changes
+- keep the Pages trust site current when public-facing claims change

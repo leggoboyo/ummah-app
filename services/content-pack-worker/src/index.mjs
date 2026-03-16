@@ -190,7 +190,7 @@ async function handleDownload(request, env) {
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("content-type", "application/gzip");
-  headers.set("cache-control", "private, max-age=600");
+  headers.set("cache-control", "no-store");
   headers.set("content-disposition", `attachment; filename="${pack.pack_id}.json.gz"`);
   headers.set("x-content-type-options", "nosniff");
   headers.set("x-ummah-pack-environment", environment);

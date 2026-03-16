@@ -25,6 +25,18 @@ jobs:
           dart pub get
           dart run melos bootstrap
 
+      - name: Build Android debug APK
+        working-directory: mobile/app
+        run: flutter build apk --debug --dart-define-from-file=env/staging.json
+
+      - name: Build Android release APK
+        working-directory: mobile/app
+        run: flutter build apk --release --dart-define-from-file=env/staging.json
+
+      - name: Build Android split APKs
+        working-directory: mobile/app
+        run: flutter build apk --release --split-per-abi --dart-define-from-file=env/staging.json
+
       - name: Build Android App Bundle
         working-directory: mobile/app
         run: flutter build appbundle --dart-define-from-file=env/staging.json

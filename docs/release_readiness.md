@@ -13,8 +13,8 @@
 - `prod`
   - RevenueCat billing path selected
   - hosted AI disabled until backend work exists
-  - remote Hadith pack delivery expected through `apiBaseUrl`
-  - intended for store-ready builds after credentials are wired
+  - remote Hadith pack delivery points at the live Worker URL in `apiBaseUrl`
+  - intended for store-ready builds after the remaining dashboard truth checks are complete
 
 Environment files live in:
 
@@ -25,27 +25,41 @@ Environment files live in:
 ## Current Release Position
 
 - Core free experience is offline-first and ad-free.
-- Premium modules are gated locally and safe to demo in preview billing mode.
-- The app now includes dedicated privacy, sources, and diagnostics surfaces.
-- CI builds staging app artifacts, not dev artifacts.
-- Atlas prompts for external account setup are ready in `/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/atlas_runbooks.md`.
-- Hadith language packs now use a remote pack delivery path and no longer need to ship inside the base mobile bundle.
+- Billing is lazy-loaded and should not be part of the free-core launch path.
+- The app includes privacy, sources, and diagnostics surfaces.
+- CI builds staging artifacts and tracks Android size outputs for AAB + release APKs.
+- Hadith language packs use the remote pack delivery path and no longer need to ship inside the base mobile bundle.
+- The public trust site now lives in `website/` and is intended for GitHub Pages deployment.
+- `apiBaseUrl` already points to the live Worker URL in all three environment JSON files.
 
 ## Remaining Human-Gated Work
 
-- App Store Connect API key creation for RevenueCat
-- Google Play service-account JSON for RevenueCat
-- Cloudflare R2 bucket, KV namespace, Worker secrets, and first deploy for remote Hadith packs
-- Store product creation and pricing
+- Cloudflare truth check:
+  - confirm Worker secrets and bindings are present in the live account
+  - confirm there are no unintended billable products/settings enabled
+- RevenueCat truth check:
+  - confirm product and entitlement dashboard state matches the repo assumptions
+- Google Play truth check:
+  - confirm internal-testing artifact/version, tester access, and Data Safety posture
+- GitHub truth check:
+  - confirm Pages config and branch-protection / required-check posture
+- Apple / Google signing and publishing credentials
 - Final store listing assets and screenshots
-- Apple/Google signing and publishing credentials
 
 ## Recommended Order
 
-1. Finish internal alpha device QA using the checklist in `/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/manual_qa_checklist.md`.
-2. Run the Atlas prompt for Cloudflare remote Hadith pack infrastructure and deploy the Worker.
-3. Set `apiBaseUrl` in the environment JSON files to the deployed Worker URL.
-4. Run the Atlas prompts for Apple and Google billing credentials.
-5. Let Codex wire the live RevenueCat keys and validate entitlement and paid-pack flows.
-6. Prepare store screenshots and privacy copy.
-7. Do a final staging pass before the first external beta.
+1. Finish internal device QA using `/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/manual_qa_checklist.md`.
+2. Run the narrow Atlas checks in `/Users/zohaibkhawaja/Documents/Codex/ummah-app/docs/atlas_readiness_checks.md`.
+3. Confirm Cloudflare Worker secret truth before enabling paid extra-language hadith packs publicly.
+4. Confirm Google Play internal-testing truth and Data Safety truth.
+5. Confirm GitHub Pages / branch-protection truth.
+6. Prepare final store screenshots and listing copy.
+7. Do one final staging pass before the first broader beta.
+
+## Current local verification snapshot
+
+- `flutter analyze` passes
+- `flutter test` passes
+- Worker tests pass
+- Android debug, release, split APK, and AAB builds pass locally
+- iOS no-codesign archive builds successfully after the latest asset refresh, with the earlier placeholder-asset warnings removed

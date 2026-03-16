@@ -50,6 +50,7 @@ class DataPrivacyScreen extends StatelessWidget {
                   'QuranEnc requests when you refresh the translation catalog or when setup downloads the translation packs you selected.',
                   'HadeethEnc requests only when you install or refresh Sunni Hadith language packs that are not already on the device.',
                   'IslamHouse public feed requests when you refresh followed scholar feeds.',
+                  'RevenueCat/store billing requests only when you open Plans & Unlocks, restore purchases, or enter a paid-gated optional module.',
                   'OpenAI requests only when you open AI Assistant and submit a question with BYOK enabled.',
                 ],
               ),

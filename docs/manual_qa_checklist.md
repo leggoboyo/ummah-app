@@ -8,6 +8,9 @@
 - Deny location permission and confirm the app falls back cleanly to manual coordinates with a clear message.
 - Confirm prayer times still load in airplane mode.
 - Confirm qibla bearing view still loads in airplane mode.
+- Run the API 24 / low-end emulator smoke script and confirm onboarding starts without a crash:
+  - `make create-low-end-avd`
+  - `make android-smoke`
 
 ## Notifications
 
@@ -54,8 +57,10 @@
 ## Settings, Privacy, and Diagnostics
 
 - Open Data & Privacy and confirm analytics are off by default.
+- Confirm the page says billing network requests happen only when Plans & Unlocks, restore purchases, or a paid-gated module is opened.
 - Toggle privacy analytics on and off and confirm the preference persists after relaunch.
 - Open Sources & Versions and confirm Quran, hadith, fiqh, and scholar feed metadata are shown without app crashes.
+- Confirm provider homepage/docs links open correctly from Sources & Versions.
 - Open Diagnostics & Support and confirm the support report copies to the clipboard.
 - Clear local logs and confirm the diagnostics history is empty afterward.
 
@@ -63,4 +68,5 @@
 
 - Increase system font size and confirm key screens remain readable.
 - Confirm app behavior on a slower or older test phone remains responsive.
+- Confirm the lean performance mode can be forced from Settings and the UI remains usable.
 - Confirm the non-production banner appears only in dev and staging builds.

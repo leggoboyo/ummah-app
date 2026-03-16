@@ -83,6 +83,7 @@ async function reserveStarterClaimBudget(env) {
   const existing = await env.STARTER_CLAIMS.get(budgetKey);
   const currentCount = parseBudgetCount(existing);
 
+  // KV makes this a best-effort daily cost guardrail, not a strict abuse-control counter.
   if (currentCount >= dailyBudget) {
     throw new Response(
       JSON.stringify({

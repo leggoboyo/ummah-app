@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:scholar_feed/scholar_feed.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../bootstrap/app_controller.dart';
 import 'settings_controller.dart';
@@ -186,10 +187,16 @@ class _SourceVersionTile extends StatelessWidget {
           const SizedBox(height: 4),
           Text('Attribution: ${version.attribution}'),
           const SizedBox(height: 4),
-          Text('Homepage: ${metadata.homepageUrl}'),
+          _SourceLinkRow(
+            label: 'Homepage',
+            url: metadata.homepageUrl,
+          ),
           if (metadata.docsUrl != null) ...<Widget>[
             const SizedBox(height: 4),
-            Text('Docs/API: ${metadata.docsUrl}'),
+            _SourceLinkRow(
+              label: 'Docs/API',
+              url: metadata.docsUrl!,
+            ),
           ],
           if (metadata.reuseNote != null) ...<Widget>[
             const SizedBox(height: 4),
@@ -273,9 +280,15 @@ class _ScholarFeedSection extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const SizedBox(height: 6),
-                      SelectableText(source.feedUrl),
+                      _SourceLinkRow(
+                        label: 'Feed',
+                        url: source.feedUrl,
+                      ),
                       const SizedBox(height: 4),
-                      SelectableText(source.siteUrl),
+                      _SourceLinkRow(
+                        label: 'Site',
+                        url: source.siteUrl,
+                      ),
                     ],
                   ),
                 ),
@@ -284,6 +297,44 @@ class _ScholarFeedSection extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SourceLinkRow extends StatelessWidget {
+  const _SourceLinkRow({
+    required this.label,
+    required this.url,
+  });
+
+  final String label;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final Uri? uri = Uri.tryParse(url);
+    final bool launchable =
+        uri != null && (uri.scheme == 'https' || uri.scheme == 'http');
+    if (!launchable) {
+      return Text('$label: $url');
+    }
+
+    return Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        Text('$label:'),
+        TextButton.icon(
+          onPressed: () {
+            launchUrl(
+              uri,
+              mode: LaunchMode.externalApplication,
+            );
+          },
+          icon: const Icon(Icons.open_in_new, size: 16),
+          label: Text(url),
+        ),
+      ],
     );
   }
 }
@@ -496,14 +547,14 @@ _ProviderMetadata _providerMetadataFor(String providerKey) {
     case 'fiqh_pack':
       return const _ProviderMetadata(
         label: 'Fiqh starter pack',
-        homepageUrl: 'Local bundled data pack',
+        homepageUrl: 'Bundled in the app',
         reuseNote:
             'Internal starter pack with cited references. Not a fatwa service.',
       );
     default:
       return const _ProviderMetadata(
         label: 'Bundled or provider-managed source',
-        homepageUrl: 'URL not recorded yet',
+        homepageUrl: 'Bundled in the app',
       );
   }
 }

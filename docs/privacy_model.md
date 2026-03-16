@@ -15,6 +15,7 @@ Ummah App is designed so the free core does not require an account, cloud sync, 
 - preview billing state when preview mode is used
 
 ### Secure OS storage
+- app user identifier used for optional billing / pack access
 - BYOK OpenAI API key, if the user enables AI assistant BYOK mode
 
 ### Local databases
@@ -28,7 +29,7 @@ Ummah App is designed so the free core does not require an account, cloud sync, 
 - Hadith content-pack requests: only when the user installs or updates Sunni Hadith packs
 - IslamHouse RSS requests: only when the user refreshes scholar feeds
 - OpenAI requests: only when the user submits an AI assistant question in BYOK mode
-- RevenueCat requests: only for optional paid billing state and entitlement restoration
+- RevenueCat requests: only when the user opens Plans & Unlocks, restores purchases, or enters a paid-gated optional module
 
 ## What does not leave the device for the free core
 - prayer calculations

@@ -66,9 +66,17 @@ class _TestAppIdentityStore implements AppIdentityStore {
   String? _appUserId;
 
   @override
-  Future<String> ensureRevenueCatAppUserId() async {
+  Future<String> ensureAppUserId() async {
     return _appUserId ??= 'ummah_test_onboarding';
   }
+
+  @override
+  Future<String> ensureRevenueCatAppUserId() async {
+    return ensureAppUserId();
+  }
+
+  @override
+  Future<String?> readAppUserId() async => _appUserId;
 
   @override
   Future<String?> readRevenueCatAppUserId() async => _appUserId;

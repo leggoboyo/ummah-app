@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -20,10 +21,12 @@ class UmmahApp extends StatelessWidget {
       animation: controller,
       builder: (BuildContext context, _) {
         final AppStrings strings = AppStrings.forCode(controller.languageCode);
+        final bool isLean =
+            controller.uiPerformanceMode == UiPerformanceMode.lean;
         return MaterialApp(
           title: strings.appName,
           debugShowCheckedModeBanner: false,
-          locale: Locale(controller.languageCode),
+          locale: Locale(strings.languageCode),
           supportedLocales: const <Locale>[
             Locale('en'),
             Locale('ar'),
@@ -34,9 +37,10 @@ class UmmahApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          theme: _buildTheme(),
+          theme: _buildTheme(isLean: isLean),
           builder: (BuildContext context, Widget? child) {
             final Widget currentChild = _AppBackdrop(
+              isLean: isLean,
               child: child ?? const SizedBox.shrink(),
             );
 
@@ -60,7 +64,9 @@ class UmmahApp extends StatelessWidget {
     );
   }
 
-  ThemeData _buildTheme() {
+  ThemeData _buildTheme({
+    required bool isLean,
+  }) {
     const Color seed = Color(0xFF0D6F59);
     const Color cloud = Color(0xFFF9F7F2);
     final ColorScheme colorScheme = ColorScheme.fromSeed(
@@ -77,18 +83,18 @@ class UmmahApp extends StatelessWidget {
     );
     final TextTheme textTheme = base.textTheme.copyWith(
       headlineMedium: base.textTheme.headlineMedium?.copyWith(
-        fontSize: 33,
+        fontSize: isLean ? 29 : 33,
         fontWeight: FontWeight.w700,
         height: 1.04,
         letterSpacing: -0.7,
       ),
       headlineSmall: base.textTheme.headlineSmall?.copyWith(
-        fontSize: 28,
+        fontSize: isLean ? 24 : 28,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
       ),
       titleLarge: base.textTheme.titleLarge?.copyWith(
-        fontSize: 23,
+        fontSize: isLean ? 21 : 23,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.25,
       ),
@@ -152,24 +158,24 @@ class UmmahApp extends StatelessWidget {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.92),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 18,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isLean ? 16 : 18,
+          vertical: isLean ? 14 : 18,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(isLean ? 18 : 22),
           borderSide: BorderSide(
             color: colorScheme.outlineVariant,
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(isLean ? 18 : 22),
           borderSide: BorderSide(
             color: colorScheme.outlineVariant,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(isLean ? 18 : 22),
           borderSide: BorderSide(
             color: colorScheme.primary,
             width: 1.4,
@@ -178,18 +184,24 @@ class UmmahApp extends StatelessWidget {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: isLean ? 16 : 18,
+            vertical: isLean ? 14 : 16,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(isLean ? 18 : 22),
           ),
           textStyle: textTheme.labelLarge,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: EdgeInsets.symmetric(
+            horizontal: isLean ? 14 : 16,
+            vertical: isLean ? 12 : 14,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(isLean ? 16 : 18),
           ),
           textStyle: textTheme.labelLarge,
         ),
@@ -198,7 +210,7 @@ class UmmahApp extends StatelessWidget {
         backgroundColor: Colors.white.withValues(alpha: 0.94),
         indicatorColor: colorScheme.primaryContainer,
         shadowColor: Colors.black.withValues(alpha: 0.06),
-        height: 72,
+        height: isLean ? 64 : 72,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStatePropertyAll<TextStyle>(
           textTheme.labelMedium!.copyWith(fontWeight: FontWeight.w700),
@@ -213,24 +225,29 @@ class UmmahApp extends StatelessWidget {
 
 class _AppBackdrop extends StatelessWidget {
   const _AppBackdrop({
+    required this.isLean,
     required this.child,
   });
 
+  final bool isLean;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[
-            Color(0xFFF6F1E6),
-            Color(0xFFF3EEE1),
-            Color(0xFFF8F7F1),
-          ],
-        ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F7F1),
+        gradient: isLean
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  Color(0xFFF6F1E6),
+                  Color(0xFFF3EEE1),
+                  Color(0xFFF8F7F1),
+                ],
+              ),
       ),
       child: child,
     );

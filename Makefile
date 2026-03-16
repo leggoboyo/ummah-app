@@ -23,7 +23,19 @@ worker-deploy:
 cost-report:
 	python3 scripts/estimate_cloudflare_costs.py
 
+android-smoke:
+	./scripts/android_smoke_test.sh
+
+create-low-end-avd:
+	./scripts/create_low_end_android_avd.sh
+
 quality: bootstrap format-check analyze test worker-test
 
 size-report:
 	./scripts/report_build_sizes.sh
+
+secret-scan:
+	python3 ./scripts/check_tracked_secret_files.py
+
+site-preview:
+	cd website && python3 -m http.server 4173

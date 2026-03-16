@@ -14,6 +14,7 @@ import 'app_notification_sync_service.dart';
 import 'app_profile.dart';
 import 'app_profile_store.dart';
 import 'app_support_report_builder.dart';
+import 'device_capabilities_service.dart';
 import 'device_location_service.dart';
 import 'diagnostics_logger.dart';
 import 'local_notifications_service.dart';
@@ -35,9 +36,10 @@ class AppController extends ChangeNotifier {
     AppLocationResolver? locationResolver,
     AppNotificationSyncService? notificationSyncService,
     AppSupportReportBuilder? supportReportBuilder,
+    DeviceCapabilitiesService? deviceCapabilitiesService,
   })  : _profileStore = profileStore ?? SharedPreferencesAppProfileStore(),
         _environment = environment ?? AppEnvironment.fromCompileTime(),
-        _identityStore = identityStore ?? SharedPreferencesAppIdentityStore(),
+        _identityStore = identityStore ?? SecureAppIdentityStore(),
         _logger = logger ?? _buildDiagnosticsLogger(),
         _locationResolver = locationResolver ??
             AppLocationResolver(
@@ -55,11 +57,13 @@ class AppController extends ChangeNotifier {
         _qiblaCalculator = qiblaCalculator ?? const QiblaCalculator(),
         _supportReportBuilder =
             supportReportBuilder ?? const AppSupportReportBuilder(),
+        _deviceCapabilitiesService =
+            deviceCapabilitiesService ?? DeviceCapabilitiesService(),
         _subscriptionRepository = subscriptionRepository ??
             SubscriptionRepository(
               provider: _buildSubscriptionProvider(
                 environment ?? AppEnvironment.fromCompileTime(),
-                identityStore ?? SharedPreferencesAppIdentityStore(),
+                identityStore ?? SecureAppIdentityStore(),
               ),
             );
 
@@ -72,15 +76,19 @@ class AppController extends ChangeNotifier {
   final PrayerTimeCalculator _prayerTimeCalculator;
   final QiblaCalculator _qiblaCalculator;
   final AppSupportReportBuilder _supportReportBuilder;
+  final DeviceCapabilitiesService _deviceCapabilitiesService;
   final SubscriptionRepository _subscriptionRepository;
 
   AppProfile _profile = AppProfile.defaults();
   Coordinates? _resolvedCoordinates;
   NotificationSyncResult? _notificationSyncResult;
-  SubscriptionState? _subscriptionState;
+  late SubscriptionState _subscriptionState =
+      _initialSubscriptionState(_environment);
   String _locationMessage =
       'Manual coordinates are active until setup is complete.';
   String? _revenueCatAppUserId;
+  UiPerformanceMode _uiPerformanceMode = UiPerformanceMode.standard;
+  bool _billingInitialized = false;
 
   bool isReady = false;
   bool isWorking = false;
@@ -136,22 +144,27 @@ class AppController extends ChangeNotifier {
   AndroidAlarmDecision? get androidAlarmDecision =>
       _notificationSyncResult?.androidAlarmDecision;
 
-  SubscriptionState? get subscriptionState => _subscriptionState;
+  SubscriptionState get subscriptionState => _subscriptionState;
 
   List<SubscriptionProduct> get subscriptionCatalog =>
-      _subscriptionState?.catalog ?? const <SubscriptionProduct>[];
+      _subscriptionState.catalog;
 
   BillingProviderKind get billingProviderKind =>
-      _subscriptionState?.providerKind ?? BillingProviderKind.revenueCat;
+      _subscriptionState.providerKind;
 
   BillingAvailability get billingAvailability =>
-      _subscriptionState?.availability ?? BillingAvailability.unavailable;
+      _subscriptionState.availability;
 
-  String? get subscriptionStatusMessage => _subscriptionState?.statusMessage;
+  String? get subscriptionStatusMessage => _subscriptionState.statusMessage;
 
-  DateTime? get entitlementSyncTime => _subscriptionState?.lastSyncedAt;
+  DateTime? get entitlementSyncTime => _subscriptionState.lastSyncedAt;
 
   String? get revenueCatAppUserId => _revenueCatAppUserId;
+
+  UiPerformanceMode get uiPerformanceMode => _uiPerformanceMode;
+
+  UiPerformanceMode? get uiPerformanceModeOverride =>
+      _profile.uiPerformanceModeOverride;
 
   PrayerNotificationPreferences get notificationPreferences =>
       PrayerNotificationPreferences(
@@ -176,9 +189,10 @@ class AppController extends ChangeNotifier {
       'App bootstrap started for ${_environment.buildLabel}.',
     );
     await _notificationSyncService.initialize();
-    _revenueCatAppUserId = await _identityStore.ensureRevenueCatAppUserId();
     _profile = await _profileStore.load();
-    await _initializeSubscriptions();
+    _uiPerformanceMode = await _deviceCapabilitiesService.resolve(
+      override: _profile.uiPerformanceModeOverride,
+    );
 
     if (_profile.onboardingComplete) {
       await _refreshCoreState(
@@ -196,6 +210,22 @@ class AppController extends ChangeNotifier {
       AppLogLevel.info,
       'App bootstrap completed. Onboarding complete: ${_profile.onboardingComplete}.',
     );
+    notifyListeners();
+  }
+
+  Future<String> ensureAppUserId() async {
+    _revenueCatAppUserId ??= await _identityStore.ensureAppUserId();
+    notifyListeners();
+    return _revenueCatAppUserId!;
+  }
+
+  Future<void> loadBillingStateIfNeeded() async {
+    if (_billingInitialized ||
+        _environment.entitlementProvider == EntitlementProviderMode.none) {
+      return;
+    }
+
+    await _initializeSubscriptions();
     notifyListeners();
   }
 
@@ -245,6 +275,7 @@ class AppController extends ChangeNotifier {
     isWorking = true;
     notifyListeners();
     try {
+      await loadBillingStateIfNeeded();
       final PurchaseResult result =
           await _subscriptionRepository.purchase(productId);
       _applySubscriptionState(result.state);
@@ -265,6 +296,7 @@ class AppController extends ChangeNotifier {
     isWorking = true;
     notifyListeners();
     try {
+      await loadBillingStateIfNeeded();
       final SubscriptionState state = await _subscriptionRepository.refresh();
       _applySubscriptionState(state);
       await _logger.log(
@@ -281,6 +313,7 @@ class AppController extends ChangeNotifier {
     isWorking = true;
     notifyListeners();
     try {
+      await loadBillingStateIfNeeded();
       final PurchaseResult result =
           await _subscriptionRepository.restorePurchases();
       _applySubscriptionState(result.state);
@@ -522,8 +555,15 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _initializeSubscriptions() async {
+    if (_environment.entitlementProvider ==
+        EntitlementProviderMode.revenueCat) {
+      _revenueCatAppUserId ??= await _identityStore.ensureAppUserId();
+    }
     final SubscriptionState state = await _subscriptionRepository.initialize();
     _applySubscriptionState(state);
+    _billingInitialized = state.availability !=
+            BillingAvailability.unavailable ||
+        _environment.entitlementProvider != EntitlementProviderMode.revenueCat;
   }
 
   void _applySubscriptionState(SubscriptionState state) {
@@ -561,6 +601,24 @@ class AppController extends ChangeNotifier {
       entries: entries,
       includeSensitiveDetails: includeSensitiveDetails,
     );
+  }
+
+  Future<void> updateUiPerformanceModeOverride(
+    UiPerformanceMode? mode,
+  ) async {
+    _profile = _profile.copyWith(
+      uiPerformanceModeOverride: mode,
+      clearUiPerformanceModeOverride: mode == null,
+    );
+    await _profileStore.save(_profile);
+    _uiPerformanceMode = await _deviceCapabilitiesService.resolve(
+      override: _profile.uiPerformanceModeOverride,
+    );
+    await _logger.log(
+      AppLogLevel.info,
+      'UI performance mode override updated to ${mode?.name ?? 'automatic'}.',
+    );
+    notifyListeners();
   }
 
   static SubscriptionProvider _buildSubscriptionProvider(
@@ -638,5 +696,34 @@ class AppController extends ChangeNotifier {
     }
     tz_data.initializeTimeZones();
     _timeZonesReady = true;
+  }
+
+  static SubscriptionState _initialSubscriptionState(
+      AppEnvironment environment) {
+    switch (environment.entitlementProvider) {
+      case EntitlementProviderMode.preview:
+        return SubscriptionState.initial(
+          providerKind: BillingProviderKind.localPreview,
+          catalog: buildDefaultSubscriptionCatalog(),
+          availability: BillingAvailability.preview,
+          statusMessage:
+              'Preview billing loads when you open Plans & Unlocks or a paid module.',
+        );
+      case EntitlementProviderMode.revenueCat:
+        return SubscriptionState.initial(
+          providerKind: BillingProviderKind.revenueCat,
+          catalog: buildDefaultSubscriptionCatalog(),
+          availability: BillingAvailability.unavailable,
+          statusMessage:
+              'Billing loads only when you open Plans & Unlocks or a paid module.',
+        );
+      case EntitlementProviderMode.none:
+        return SubscriptionState.initial(
+          providerKind: BillingProviderKind.revenueCat,
+          catalog: buildDefaultSubscriptionCatalog(),
+          availability: BillingAvailability.unavailable,
+          statusMessage: 'Billing is intentionally disabled in this build.',
+        );
+    }
   }
 }

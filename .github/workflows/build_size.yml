@@ -45,7 +45,7 @@ jobs:
         run: ./scripts/report_build_sizes.sh
 
       - name: Upload size report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-size-report
           path: build/build-size-report.md

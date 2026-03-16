@@ -555,12 +555,14 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _initializeSubscriptions() async {
-    if (_environment.entitlementProvider == EntitlementProviderMode.revenueCat) {
+    if (_environment.entitlementProvider ==
+        EntitlementProviderMode.revenueCat) {
       _revenueCatAppUserId ??= await _identityStore.ensureAppUserId();
     }
     final SubscriptionState state = await _subscriptionRepository.initialize();
     _applySubscriptionState(state);
-    _billingInitialized = state.availability != BillingAvailability.unavailable ||
+    _billingInitialized = state.availability !=
+            BillingAvailability.unavailable ||
         _environment.entitlementProvider != EntitlementProviderMode.revenueCat;
   }
 
@@ -696,7 +698,8 @@ class AppController extends ChangeNotifier {
     _timeZonesReady = true;
   }
 
-  static SubscriptionState _initialSubscriptionState(AppEnvironment environment) {
+  static SubscriptionState _initialSubscriptionState(
+      AppEnvironment environment) {
     switch (environment.entitlementProvider) {
       case EntitlementProviderMode.preview:
         return SubscriptionState.initial(

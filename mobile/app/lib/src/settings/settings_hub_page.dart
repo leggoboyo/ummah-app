@@ -127,7 +127,8 @@ class SettingsHubScreen extends StatelessWidget {
     BuildContext context,
     AppController appController,
   ) async {
-    final UiPerformanceMode? selected = await showModalBottomSheet<UiPerformanceMode?>(
+    final UiPerformanceMode? selected =
+        await showModalBottomSheet<UiPerformanceMode?>(
       context: context,
       showDragHandle: true,
       builder: (BuildContext context) {

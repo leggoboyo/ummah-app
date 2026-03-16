@@ -313,7 +313,8 @@ class _SourceLinkRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Uri? uri = Uri.tryParse(url);
-    final bool launchable = uri != null && (uri.scheme == 'https' || uri.scheme == 'http');
+    final bool launchable =
+        uri != null && (uri.scheme == 'https' || uri.scheme == 'http');
     if (!launchable) {
       return Text('$label: $url');
     }

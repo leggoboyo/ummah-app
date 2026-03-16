@@ -66,7 +66,8 @@ void main() {
     );
   });
 
-  test('loading billing creates app user id and initializes subscriptions', () async {
+  test('loading billing creates app user id and initializes subscriptions',
+      () async {
     final _SpyAppIdentityStore identityStore = _SpyAppIdentityStore();
     final _SpySubscriptionProvider provider = _SpySubscriptionProvider(
       initialState: SubscriptionState.initial(

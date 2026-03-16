@@ -22,8 +22,8 @@ class DeviceCapabilities {
 class DeviceCapabilitiesService {
   DeviceCapabilitiesService({
     MethodChannel? channel,
-  }) : _channel =
-            channel ?? const MethodChannel('com.zokorp.ummah/device_capabilities');
+  }) : _channel = channel ??
+            const MethodChannel('com.zokorp.ummah/device_capabilities');
 
   final MethodChannel _channel;
 
@@ -36,8 +36,8 @@ class DeviceCapabilitiesService {
     }
 
     try {
-      final Map<Object?, Object?>? raw =
-          await _channel.invokeMapMethod<Object?, Object?>('getDeviceCapabilities');
+      final Map<Object?, Object?>? raw = await _channel
+          .invokeMapMethod<Object?, Object?>('getDeviceCapabilities');
       final Object? rawAndroidSdkInt = raw?['androidSdkInt'];
       return DeviceCapabilities(
         androidSdkInt: rawAndroidSdkInt is int

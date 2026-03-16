@@ -32,8 +32,9 @@ class _PlansAndUnlocksScreenState extends State<PlansAndUnlocksScreen> {
       builder: (BuildContext context, _) {
         final SubscriptionProduct? recommendedProduct =
             widget.focusEntitlement == null
-            ? null
-            : widget.controller.recommendedProductFor(widget.focusEntitlement!);
+                ? null
+                : widget.controller
+                    .recommendedProductFor(widget.focusEntitlement!);
 
         return Scaffold(
           appBar: AppBar(

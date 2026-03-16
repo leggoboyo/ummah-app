@@ -560,131 +560,131 @@ class _MorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget buildContent(List<Widget> sourceChips) {
       return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
-          children: <Widget>[
-            _GradientHeroCard(
-              eyebrow: 'More',
-              title: 'Tools, learning, and support',
-              subtitle:
-                  'Everything beyond the core prayer experience lives here.',
-            ),
-            _ModuleCard(
-              icon: Icons.settings_outlined,
-              title: 'Settings',
-              subtitle:
-                  'Privacy controls, source versions, and local diagnostics.',
-              statusLabel: 'Open',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) => SettingsHubScreen(
-                      appController: appController,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _ModuleCard(
-              icon: Icons.workspace_premium_outlined,
-              title: 'Plans & Unlocks',
-              subtitle: appController.subscriptionStatusMessage ??
-                  'Manage premium modules and restore purchases.',
-              statusLabel: 'Open',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) => PlansAndUnlocksScreen(
-                      controller: appController,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _ModuleCard(
-              icon: appController.hasAccess(AppEntitlement.aiQuran) ||
-                      appController.hasAccess(AppEntitlement.aiHadith)
-                  ? Icons.auto_awesome_outlined
-                  : Icons.lock_outline,
-              title: 'AI Assistant',
-              subtitle: appController.hasAccess(AppEntitlement.aiQuran) ||
-                      appController.hasAccess(AppEntitlement.aiHadith)
-                  ? 'Citation-first Quran and Hadith answers with BYOK key storage.'
-                  : 'Unlock Ask Quran AI, Ask Hadith AI, or Mega Bundle to use the assistant.',
-              statusLabel: appController.hasAccess(AppEntitlement.aiQuran) ||
-                      appController.hasAccess(AppEntitlement.aiHadith)
-                  ? 'Unlocked'
-                  : 'Locked',
-              highlighted: appController.hasAccess(AppEntitlement.aiQuran) ||
-                  appController.hasAccess(AppEntitlement.aiHadith),
-              onTap: () {
-                _openAiOrPaywall(context);
-              },
-            ),
-            _ModuleCard(
-              icon: appController.hasAccess(AppEntitlement.scholarFeed)
-                  ? Icons.rss_feed_outlined
-                  : Icons.lock_outline,
-              title: 'Scholar Feed',
-              subtitle: appController.hasAccess(AppEntitlement.scholarFeed)
-                  ? 'Curated public source feeds with local metadata caching and source selection.'
-                  : 'Unlock Scholar Feed or Mega Bundle to follow trusted source feeds.',
-              statusLabel: appController.hasAccess(AppEntitlement.scholarFeed)
-                  ? 'Unlocked'
-                  : 'Locked',
-              highlighted: appController.hasAccess(AppEntitlement.scholarFeed),
-              onTap: () {
-                _openScholarFeedOrPaywall(context);
-              },
-            ),
-            _ModuleCard(
-              icon: Icons.rule_folder_outlined,
-              title: 'Fiqh Guide',
-              subtitle:
-                  'Daily obligation checklists, disputed issues, and side-by-side school comparison with sourced references.',
-              statusLabel: 'Open',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) => FiqhGuideScreen(
-                      fiqhProfile: appController.fiqhProfile,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _ModuleCard(
-              icon: Icons.library_books_outlined,
-              title: 'Hadith Finder',
-              subtitle: appController.hasAccess(AppEntitlement.hadithPlus)
-                  ? 'Free Sunni Hadith Finder with extra language packs unlocked.'
-                  : 'Free Sunni Hadith Finder with one recommended offline pack. Hadith Plus unlocks extra language packs and future advanced study tools.',
-              statusLabel: appController.hasAccess(AppEntitlement.hadithPlus)
-                  ? 'Open + extras'
-                  : 'Free',
-              highlighted: true,
-              onTap: () {
-                _openHadithFinder(context);
-              },
-            ),
-            _DetailPanelCard(
-              icon: Icons.verified_user_outlined,
-              title: 'Safety',
-              subtitle:
-                  'The app presents sourced views, not definitive fatwas. Users should consult qualified scholars for context-heavy issues.',
-            ),
-            if (sourceChips.isNotEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: sourceChips,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
+        children: <Widget>[
+          _GradientHeroCard(
+            eyebrow: 'More',
+            title: 'Tools, learning, and support',
+            subtitle:
+                'Everything beyond the core prayer experience lives here.',
+          ),
+          _ModuleCard(
+            icon: Icons.settings_outlined,
+            title: 'Settings',
+            subtitle:
+                'Privacy controls, source versions, and local diagnostics.',
+            statusLabel: 'Open',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => SettingsHubScreen(
+                    appController: appController,
                   ),
                 ),
+              );
+            },
+          ),
+          _ModuleCard(
+            icon: Icons.workspace_premium_outlined,
+            title: 'Plans & Unlocks',
+            subtitle: appController.subscriptionStatusMessage ??
+                'Manage premium modules and restore purchases.',
+            statusLabel: 'Open',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => PlansAndUnlocksScreen(
+                    controller: appController,
+                  ),
+                ),
+              );
+            },
+          ),
+          _ModuleCard(
+            icon: appController.hasAccess(AppEntitlement.aiQuran) ||
+                    appController.hasAccess(AppEntitlement.aiHadith)
+                ? Icons.auto_awesome_outlined
+                : Icons.lock_outline,
+            title: 'AI Assistant',
+            subtitle: appController.hasAccess(AppEntitlement.aiQuran) ||
+                    appController.hasAccess(AppEntitlement.aiHadith)
+                ? 'Citation-first Quran and Hadith answers with BYOK key storage.'
+                : 'Unlock Ask Quran AI, Ask Hadith AI, or Mega Bundle to use the assistant.',
+            statusLabel: appController.hasAccess(AppEntitlement.aiQuran) ||
+                    appController.hasAccess(AppEntitlement.aiHadith)
+                ? 'Unlocked'
+                : 'Locked',
+            highlighted: appController.hasAccess(AppEntitlement.aiQuran) ||
+                appController.hasAccess(AppEntitlement.aiHadith),
+            onTap: () {
+              _openAiOrPaywall(context);
+            },
+          ),
+          _ModuleCard(
+            icon: appController.hasAccess(AppEntitlement.scholarFeed)
+                ? Icons.rss_feed_outlined
+                : Icons.lock_outline,
+            title: 'Scholar Feed',
+            subtitle: appController.hasAccess(AppEntitlement.scholarFeed)
+                ? 'Curated public source feeds with local metadata caching and source selection.'
+                : 'Unlock Scholar Feed or Mega Bundle to follow trusted source feeds.',
+            statusLabel: appController.hasAccess(AppEntitlement.scholarFeed)
+                ? 'Unlocked'
+                : 'Locked',
+            highlighted: appController.hasAccess(AppEntitlement.scholarFeed),
+            onTap: () {
+              _openScholarFeedOrPaywall(context);
+            },
+          ),
+          _ModuleCard(
+            icon: Icons.rule_folder_outlined,
+            title: 'Fiqh Guide',
+            subtitle:
+                'Daily obligation checklists, disputed issues, and side-by-side school comparison with sourced references.',
+            statusLabel: 'Open',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => FiqhGuideScreen(
+                    fiqhProfile: appController.fiqhProfile,
+                  ),
+                ),
+              );
+            },
+          ),
+          _ModuleCard(
+            icon: Icons.library_books_outlined,
+            title: 'Hadith Finder',
+            subtitle: appController.hasAccess(AppEntitlement.hadithPlus)
+                ? 'Free Sunni Hadith Finder with extra language packs unlocked.'
+                : 'Free Sunni Hadith Finder with one recommended offline pack. Hadith Plus unlocks extra language packs and future advanced study tools.',
+            statusLabel: appController.hasAccess(AppEntitlement.hadithPlus)
+                ? 'Open + extras'
+                : 'Free',
+            highlighted: true,
+            onTap: () {
+              _openHadithFinder(context);
+            },
+          ),
+          _DetailPanelCard(
+            icon: Icons.verified_user_outlined,
+            title: 'Safety',
+            subtitle:
+                'The app presents sourced views, not definitive fatwas. Users should consult qualified scholars for context-heavy issues.',
+          ),
+          if (sourceChips.isNotEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: sourceChips,
+                ),
               ),
-          ],
-        );
+            ),
+        ],
+      );
     }
 
     final QuranController? currentQuranController = quranController;

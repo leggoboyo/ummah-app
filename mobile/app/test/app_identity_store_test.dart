@@ -5,7 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ummah_mobile_app/src/bootstrap/app_identity_store.dart';
 
 void main() {
-  test('migrates legacy shared-preferences app user id into secure storage', () async {
+  test('migrates legacy shared-preferences app user id into secure storage',
+      () async {
     final _InMemorySecureValueStore secureStore = _InMemorySecureValueStore();
     final _InMemoryKeyValueStore legacyStore = _InMemoryKeyValueStore()
       ..values['revenuecat_app_user_id_v1'] = 'ummah_legacy_user_id';
@@ -22,7 +23,8 @@ void main() {
       await secureStore.readSecret('revenuecat_app_user_id_v1'),
       'ummah_legacy_user_id',
     );
-    expect(legacyStore.values.containsKey('revenuecat_app_user_id_v1'), isFalse);
+    expect(
+        legacyStore.values.containsKey('revenuecat_app_user_id_v1'), isFalse);
   });
 
   test('generates and stores new app user ids in secure storage', () async {
